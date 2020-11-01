@@ -1,0 +1,177 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+@{
+    Layout = null;
+}
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+<html>
+
+<head>
+    <script src="https://steamaccounts.us/js/widget.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.3/signalr.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://steamaccounts.us/css/widget.css">
+    <style>
+        @@keyframes bounce-4 {
+            0% {
+                transform: scale(1, 1) translateY(0);
+            }
+
+            10% {
+                transform: scale(1.1, .9) translateY(0);
+            }
+
+            30% {
+                transform: scale(.9, 1.1) translateY(-100px);
+            }
+
+            50% {
+                transform: scale(1, 1) translateY(0);
+            }
+
+            100% {
+                transform: scale(1, 1) translateY(0);
+            }
+        }
+
+        @@keyframes example {
+            0% {
+                position: fixed;
+                top: 10%;
+                left: 50%;
+                /* bring your own prefixes */
+                transform: translate(-50%, -50%);
+            }
+
+            100% {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                /* bring your own prefixes */
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        @@keyframes remove {
+            0% {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                /* bring your own prefixes */
+                transform: translate(-50%, -50%);
+            }
+
+            100% {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                /* bring your own prefixes */
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+
+</body>
+<script>
+    var donation_id = 0;
+    var donations = [];
+    var donation_in_progress = false;
+    function insertDonation(from, amount, message) {
+        donations.push({ time: new Date(), from: from, amount: amount, message: message, showed: false });
+    }
+    setInterval(() => {
+        if (donation_in_progress)
+            return;
+        for (let index = 0; index < donations.length; index++) {
+            const donation = donations[index];
+            if (!donation.showed) {
+                donation_in_progress = true;
+                donation.showed = true;
+                showDonation(donation.from, donation.amount, donation.message);
+                break;
+            }
+        }
+
+
+    }, 1000);
+    function showDonation(from, amount, message) {
+
+
+        var cur_id = donation_id;
+        new Audio('https://steamaccounts.us/sound.mp3').play()
+
+        $("body").append(`
+     <div class="text-container" style="animation: example;   animation-duration: 1s; animation-fill-mode: forwards;" id="${donation_id}">
+            <div class="image-container">
+                <img src="https://media0.giphy.com/media/hrQnFqUKTXwSSvH8AI/200.gif">
+            </div>
+            <div>
+                <div class="awsome-text-container">
+                    <span id="username-container"></span>
+                    ${from}
+                    <span id="amount-container"> a donat ${amount} paray</span>!
+                </div>
+                <div class="awsome-text-container">
+
+                    ${message}
+
+                </div>
+            </div>
+        </div>
+
+     `);
+
+        setTimeout(() => {
+            console.log(cur_id);
+            $("#" + cur_id).remove();
+            donation_in_progress = false;
+        }, 3000);
+        donation_id++;
+
+    }
+   
+    document.addEventListener('DOMContentLoaded', function () {
+
+
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl('/ws')
+            .withAutomaticReconnect()
+            .build();
+
+
+
+
+        connection.on('receivedDonation', function (donationData) {
+            donationData = donationData.value;
+            insertDonation(donationData.name, donationData.amount, donationData.message);
+            console.log("received donation from" + JSON.stringify(donationData));
+        });
+
+
+        // Transport fallback functionality is now built into start.
+        connection.start()
+            .then(function () {
+                console.log('connection started');
+
+                connection.invoke('connectedDonation');
+
+            })
+            .catch(error => {
+                console.error(error.message);
+            });
+
+    });
+
+</script>
+
+</html>

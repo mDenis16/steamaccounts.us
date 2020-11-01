@@ -1,0 +1,238 @@
+﻿
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@model csgo.postModels.sellerRequest
+@{
+    ViewData["Title"] = "Home Page";
+    ViewBag.logged = false;
+    csgo.usersManager.userData account = null;
+    csgo.usersManager.sellerRequest sellerRequest = null;
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        account = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if (account != null)
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+            csgo.Controllers.adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, csgo.Controllers.adminController.tokenType.requestseller);
+            sellerRequest = await csgo.usersManager.readSellerRequest(account.id);
+        }
+    }
+}
+@functions{
+    public string GetAntiXsrfRequestToken( )
+    {
+        return Xsrf.GetAndStoreTokens( Context ).RequestToken;
+    }
+}
+<style>
+    .dropzone {
+      border: 4px dashed #ccc;
+      height: 100%;
+      position: relative;
+      margin-right: auto;
+      margin-left: auto;
+      max-width: 100%;
+    }
+
+    .info {
+      margin-top: 11%;
+    }
+
+    .dropzone p {
+      /*height: 100%;*/
+      /*line-height: 200px;*/
+      margin: 0%;
+      text-align: center;
+      width: 100%
+    }
+
+    .input {
+      height: 100%;
+      left: 0;
+      outline: 0;
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      width: 100%
+    }
+  </style><style>
+    .dropzone {
+        border: 4px dashed #ccc;
+        height: 100%;
+        position: relative;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 100%;
+    }
+
+    .info {
+        margin-top: 11%;
+    }
+
+    .dropzone p {
+        /*height: 100%;*/
+        /*line-height: 200px;*/
+        margin: 0%;
+        text-align: center;
+        width: 100%
+    }
+
+    .input {
+        height: 100%;
+        left: 0;
+        outline: 0;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        width: 100%
+    }
+</style>
+
+@{ 
+    if (account != null)
+    {
+       
+<main class="mt-5 pt-lg-5">
+    <div class="container">
+        <main role="main" class="row ">
+
+            <div class="col-md-12 card card-ecommerce pt-2">
+                <div class="card-body text-center">
+                    <h4 class="card-title font-weight-bold mb-2">Request seller status</h4>
+                    <p class="card-text">Member since: @account.registerDate.ToString()</p>
+                    @if (sellerRequest.username == null)
+                    {
+                        @using (Html.BeginForm("requestSellerPost", "marketPlace", FormMethod.Post, new { @class = "form", @id = "requstForm", @role = "from" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+
+
+                            <div class="md-form" aria-disabled="true">
+                                <input class="form-control" type="text" value="@account.username" disabled>
+
+                            </div>
+                            <div class="md-form">
+
+                                @Html.TextBoxFor(m => m.age, new { @type = "number", @id = "age", @class = "form-control" })
+                                <label for="age">How old are you?</label>
+                            </div>
+                            <div class="md-form">
+
+                                @Html.TextBoxFor(m => m.nationality, new { @type = "text", @id = "nationality", @class = "form-control" })
+                                <label for="nationality">Nationality</label>
+                            </div>
+
+                            <div class="md-form">
+                                @Html.TextAreaFor(m => m.description, new { @type = "text", @id = "description", @rows = "6", @class = "md-textarea form-control" })
+                                <label for="description">Describe yourself in at least 20 words:</label>
+                            </div>
+
+                            <div class="md-form">
+                                @Html.TextAreaFor(m => m.question, new { @type = "text", @id = "question", @rows = "3", @class = "md-textarea form-control" })
+                                <label for="question">Why do you want to be a seller on our site?</label>
+                            </div>
+                            <div class="md-form">
+                                @Html.TextBoxFor(m => m.phoneNumber, new { @type = "text", @id = "phoneNumber", @rows = "6", @class = "md-textarea form-control" })
+                                <label for="description">Whatsapp Number:</label>
+                            </div>
+                            <button type="submit" class="btn btn-lg btn-dark btn-rounded text-center" id="sendFormular">Send formular</button>
+                        }
+                    }
+                    else
+                    {
+                        <div class="md-form" aria-disabled="true">
+                            <input class="form-control" data-val="true"
+                                   data-val-required="The username field is required." id="username" name="username"
+                                   type="text" value="@account.username" disabled>
+
+                        </div>
+                        <div class="md-form">
+                            <input class="form-control" data-val="true"
+                                   data-val-required="The username field is required." id="password" name="password"
+                                   type="text" value="@sellerRequest.age" disabled>
+
+                        </div>
+                        <div class="md-form">
+                            <input class="form-control" data-val="true"
+                                   data-val-required="The username field is required." id="nationality" name="password"
+                                   type="text" value="@sellerRequest.nationality" disabled>
+
+                        </div>
+
+                        <div class="md-form">
+                            <textarea id="description" class="md-textarea form-control" rows="6" disabled>@sellerRequest.description</textarea>
+
+                        </div>
+
+                        <div class="md-form">
+                            <textarea id="question" class="md-textarea form-control" rows="3" disabled>@sellerRequest.question</textarea>
+
+                        </div>
+                        <div class="md-form">
+                            <input class="form-control" data-val="true"
+                                   data-val-required="The phonenumber field is required." id="nationality" name="password"
+                                   type="text" value="@sellerRequest.phoneNumber" disabled>
+
+                        </div>
+                    }
+
+
+
+                </div>
+            </div>
+            <div class="col-md-12 pt-3">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>Be aware!</strong> This can take from 24 hours to 7 days. An admin will contact you on whatsapp.
+                </div>
+            </div>
+        </main>
+    </div>
+</main>
+        }
+    }
+<script type="text/javascript">
+   
+    $(document).ready(function () {
+       
+        $("#sendFormular").click(function (event) {
+            event.preventDefault();
+            if (!$("#age").val()) {
+                toastr.error('Age can`t be empty.');
+                return;
+            }
+            if ($("#age").val() < 13) {
+                toastr.error('You need to be over 13.'); 
+                return;
+            }
+            if ($("#age").val() > 100) {
+                toastr.error('You are too old.');
+                return;
+            }
+            if ($("#description").val().length < 20) {
+                toastr.error('Description is too short.');
+                return;
+            }
+            if ($("#description").val().length > 1000) {
+                toastr.error('Description is too long.');
+                return;
+            }
+            if ($("#question").val().length < 10) {
+                toastr.error('Question response is too short.');
+                return;
+            }
+            if ($("#question").val().length > 700) {
+                toastr.error('Question response is too long.');
+                return;
+            }
+                setTimeout(() => {
+                    $('body').animate({ opacity: 0 }, 400, function () {
+                        $('#requstForm').submit();
+                    });
+                }, 300);
+            
+    });
+
+
+</script>

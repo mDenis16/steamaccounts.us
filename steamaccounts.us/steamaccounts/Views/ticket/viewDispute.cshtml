@@ -1,0 +1,478 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+@using Newtonsoft;
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData account = null;
+    csgo.core.ticketsManager.ticket dispute = null;
+    csgo.csgoAccount csgoAccount = null;
+    if ( ViewBag.id == null )
+        HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        account = csgo.usersManager.getUserData( HttpContextAccessor.HttpContext.Request ).Result;
+
+        if ( account != null )
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+            dispute = csgo.core.ticketsManager.getTicketData( ViewBag.id ).Result;
+
+            account.lastRequest = HttpContextAccessor.HttpContext.Request;
+
+
+            csgo.usersManager.users.Find( a => a.id == account.id ).lastRequest = HttpContextAccessor.HttpContext.Request;
+            if ( !( account.id == dispute.againstId || account.id == dispute.fromUserId || account.admin ) )
+                HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+            ViewBag.nextToken = Convert.ToBase64String( Guid.NewGuid( ).ToByteArray( ) );
+            csgo.Controllers.adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.sendmessage, ViewBag.nextToken );
+            csgo.Controllers.adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.closeticket );
+            if ( account.admin )
+                adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.admin );
+
+
+        }
+        else
+            HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+    }
+    else
+        HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+
+
+}
+<style>
+    .card.chat-room .members-panel-1,
+    .card.chat-room .chat-1 {
+        position: relative;
+        overflow-y: scroll;
+    }
+
+    .card.chat-room .members-panel-1 {
+        height: 570px;
+    }
+
+    .card.chat-room .chat-1 {
+        height: 495px;
+    }
+
+    .card.chat-room .friend-list li {
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+        .card.chat-room .friend-list li:last-of-type {
+            border-bottom: none;
+        }
+
+    .scrollbar-light-blue::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+        background-color: #F5F5F5;
+        border-radius: 10px;
+    }
+
+    .scrollbar-light-blue::-webkit-scrollbar {
+        width: 12px;
+        background-color: #F5F5F5;
+    }
+
+    .scrollbar-light-blue::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+        background-color: #82B1FF;
+    }
+
+    .rare-wind-gradient {
+        background-image: -webkit-gradient(linear, left bottom, left top, from(#a8edea), to(#fed6e3));
+        background-image: -webkit-linear-gradient(bottom, #a8edea 0%, #fed6e3 100%);
+        background-image: linear-gradient(to top, #a8edea 0%, #fed6e3 100%);
+    }
+
+    .dropzone {
+        border: 4px dashed #ccc;
+        height: 100%;
+        position: relative;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 100%;
+    }
+
+    .info {
+        margin-top: 11%;
+    }
+
+    .dropzone p {
+        /*height: 100%;*/
+        /*line-height: 200px;*/
+        margin: 0%;
+        text-align: center;
+        width: 100%
+    }
+
+    .input {
+        height: 100%;
+        left: 0;
+        outline: 0;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        width: 100%
+    }
+</style>
+
+<main class="mt-5 pt-lg-5">
+
+    <div class="container">
+
+        <main role="main" class="pt-5">
+            <section class="section pb-3 wow fadeIn animated" data-wow-delay="0.3s"
+                     style="visibility: visible; animation-name: fadeIn; animation-delay: 0.3s;">
+
+
+
+                <!-- Grid row -->
+                <div class="row">
+
+                    <!--Grid column-->
+                    <div class="col-lg-12">
+                        <div class="">
+                            <div class="card grey lighten-5 chat-room ">
+                                <div class="card-body h-25">
+
+                                    <!-- Grid row -->
+                                    <div class="row px-lg-2 px-2">
+
+                                        <!-- Grid column -->
+                                        <div class="col-md-6 col-xl-4 px-0">
+
+                                            <h6 class="font-weight-bold mb-3 text-center text-lg-left">Participants</h6>
+                                            <div class="white z-depth-1 px-2 pt-3 pb-0 members-panel-1 scrollbar-light-blue">
+                                                <ul class="list-unstyled friend-list">
+                                                    <li class="active grey lighten-3 p-2 pb-3">
+                                                        <a class="d-flex justify-content-between">
+
+                                                            <div class="text-small">
+                                                                @if ( dispute != null )
+                                                                {
+                                                                    <strong>@dispute.against</strong>
+                                                                }
+                                                            </div>
+                                                            <div class="chat-footer">
+                                                                <p class="text-smaller text-muted mb-0"></p>
+                                                                <span class="badge badge-danger float-left">Seller</span>
+                                                            </div>
+                                                        </a>
+                                                    </li>
+
+                                                </ul>
+                                                <ul class="list-unstyled friend-list">
+                                                    <li class="active grey lighten-3 p-2 pb-3">
+                                                        <a class="d-flex justify-content-between">
+
+                                                            <div class="text-small">
+                                                                @if ( dispute != null )
+                                                                {
+                                                                    <strong>@dispute.fromUser</strong>
+                                                                }
+                                                            </div>
+                                                            <div class="chat-footer">
+                                                                <p class="text-smaller text-muted mb-0"></p>
+                                                                <span class="badge badge-success float-left">Buyer</span>
+                                                            </div>
+                                                        </a>
+                                                    </li>
+
+                                                </ul>
+                                                @{
+                                                    @if ( dispute != null )
+                                                    {
+                                                        foreach ( var participant in dispute.messages.FindAll( a => a.fromId != dispute.fromUserId && a.fromId != dispute.againstId ).Select( a => a.fromUsername ).Distinct( ) )
+                                                        {
+                                                            <ul class="list-unstyled friend-list">
+                                                                <li class="active grey lighten-3 p-2 pb-3">
+                                                                    <a class="d-flex justify-content-between">
+
+                                                                        <div class="text-small">
+                                                                            <strong>@participant</strong>
+
+                                                                        </div>
+                                                                        <div class="chat-footer">
+                                                                            <p class="text-smaller text-muted mb-0"></p>
+                                                                            <span class="badge badge-danger float-left">Admin</span>
+                                                                        </div>
+                                                                    </a>
+                                                                </li>
+
+                                                            </ul>
+                                                        }
+                                                    }
+                                                    }
+
+
+                                                    </ul>
+                                                </div>
+                                            @{
+
+                                                if ( dispute != null && dispute.closed )
+                                                {
+                                                    if ( account.admin )
+                                                    {
+                                                        <button type="button" class="btn btn-warning btn-rounded  waves-effect waves-light mt-3" id="openTicket">REOPEN TICKET</button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="row text-center"> <span class="badge badge-success"> This ticket is closed.</span></div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if ( account != null && account.admin )
+                                                    {
+                                                        <button type="button" class="btn btn-danger btn-rounded  waves-effect waves-light mt-3" id="closeTicket">CLOSE TICKET</button>
+                                                    }
+
+                                                }
+
+                                            }
+
+                                        </div>
+                                        <!-- Grid column -->
+                                        <!-- Grid column -->
+                                        <div class="col-md-6 col-xl-8 pl-md-3 px-lg-auto px-0" style="width: 700px">
+
+                                            <div class="chat-message" style="width: 100%">
+
+                                                <ul class="list-unstyled chat-1 scrollbar-light-blue" style="width: 100%" id="messages">
+                                                    @if ( dispute != null )
+                                                    {
+                                                    @foreach ( var message in dispute.messages )
+                                                    {
+                                                        <li class="d-flex justify-content-between mb-4 pt-1" style="width: 100%">
+
+                                                            <div class="chat-body white p-3 ml-2 z-depth-1 mr-2" style="width: 100%">
+                                                                <div class="header">
+                                                                    <strong class="primary-font">@message.fromUsername</strong>
+                                                                    <small class="pull-right text-muted"><i class="far fa-clock"></i> @message.date.ToString( )</small>
+                                                                </div>
+                                                                <hr class="w-100">
+                                                                <p class="pr-2">
+                                                                    @message.messageData
+                                                                </p>
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                    }
+
+
+                                                </ul>
+
+                                                <div class="white">
+                                                    <div class="form-group basic-textarea">
+                                                        @if ( dispute != null && dispute.closed )
+                                                        {
+                                                            <textarea class="form-control pl-2 my-0" id="exampleFormControlTextarea2" rows="3" id="message" placeholder="Type your message here..." disabled></textarea>
+                                                        }
+                                                        else
+                                                        {
+                                                            <textarea class="form-control pl-2 my-0" id="exampleFormControlTextarea2" rows="3" id="message" placeholder="Type your message here..."></textarea>
+                                                        }
+
+                                                    </div>
+                                                </div>
+
+                                                @if ( dispute != null && dispute.closed )
+                                                {
+                                                    <button type="button" class="btn btn-outline-success btn-rounded" disabled>Send</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-outline-success btn-rounded" id="sendBtn">Send</button>
+                                                }
+                                            </div>
+
+                                        </div>
+                                        <!-- Grid column -->
+
+                                    </div>
+                                    <!-- Grid row -->
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+</main>
+                                               
+@if ( account != null && account.admin )
+{
+    <script>
+        $(document).ready(() => {
+
+
+            $("#closeTicket").click(function () {
+                $.ajax({
+                    url: '/ticket/closeTicket',
+                    type: 'GET',
+                    data: {},
+                    dataType: 'json',
+                    success: function (result) {
+
+                        if (!result.success) {
+                            toastr.error(result.message);
+                        } else {
+                            toastr.success('This ticket was succesfully closed.');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        }
+
+                    },
+                    error: function () {
+
+                        toastr.error("An error ocurred");
+                    }
+                });
+            });
+            $("#openTicket").click(function () {
+                $.ajax({
+                    url: '/ticket/openTicket',
+                    type: 'GET',
+                    data: {},
+                    dataType: 'json',
+                    success: function (result) {
+
+                        if (!result.success) {
+                            toastr.error(result.message);
+                        } else {
+                            toastr.success('This ticket was succesfully opened.');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        }
+
+                    },
+                    error: function () {
+
+                        toastr.error("An error ocurred");
+                    }
+                });
+            });
+
+        });
+    </script>
+}
+@if ( dispute != null )
+{
+<script>
+    var cachedMessages = @Html.Raw( Newtonsoft.Json.JsonConvert.SerializeObject( dispute.messages.Select( a => a.id ) ) );
+    var curticketId = @Html.Raw( dispute.id );
+    var nextToken = '@Html.Raw( ViewBag.nextToken )';
+    function reloadTicket() {
+        $.ajax({
+            url: '/ticket/readMessages',
+            type: 'GET',
+            data: { cached: JSON.stringify(cachedMessages) },
+            dataType: 'json',
+            success: function (result) {
+
+                result.forEach(message => {
+
+                    $("#messages").append(`
+<li class="d-flex justify-content-between mb-4 pt-1" style="width: 100%">
+
+                                                            <div class="chat-body white p-3 ml-2 z-depth-1 mr-2" style="width: 100%">
+                                                                <div class="header">
+                                                                    <strong class="primary-font"> ${message.fromUsername}</strong>
+                                                                    <small class="pull-right text-muted"><i class="far fa-clock"></i>${message.date}</small>
+                                                                </div>
+                                                                <hr class="w-100">
+                                                                <p class="pr-2">
+                                                                   ${message.messageData}
+                                                                </p>
+                                                            </div>
+                                                        </li>
+                        `);
+                    cachedMessages.push(message.id);
+                });
+                $("#messages").scrollTop($("#messages")[0].scrollHeight);
+
+            },
+            error: function () {
+
+                toastr.error("An error ocurred");
+            }
+        });
+    }
+    $(document).ready(() => {
+
+     
+
+
+        $("#sendBtn").click(function () {
+                        var msg = $("#exampleFormControlTextarea2").val();
+            $("#exampleFormControlTextarea2").val("");
+                        if (msg.length < 5) {
+                            toastr.error('Your message is too short.');
+                            return;
+                        }
+                        if (msg.length > 100) {
+                            toastr.error('Your are limited at 100 characters.');
+                            return;
+                        }
+                        var forbidenWords = ['pula', 'pizda', 'coaiele', 'tepar', 'muie', 'cur', 'curva', 'mata', 'tactu', 'prost', 'mui', 'gaoz', 'malakie'];
+                        forbidenWords.forEach(a => {
+                            if (msg.includes(a)) {
+                                toastr.error('Your message contains forbiden words.');
+                                return;
+                            }
+                        });
+
+            $.ajax({
+                            url: '/ticket/sendMessage',
+                type: 'GET',
+                data: { token: nextToken, message: msg},
+                dataType: 'json',
+                success: function (result) {
+
+                                if (!result.success) {
+                                    toastr.error(result.message);
+                                } else {
+
+                                    toastr.success(result.message);
+                                    cachedMessages.push(result.response.id);
+                        $("#messages").append(`
+<li class="d-flex justify-content-between mb-4 pt-1" style="width: 100%">
+
+                                                            <div class="chat-body white p-3 ml-2 z-depth-1 mr-2" style="width: 100%">
+                                                                <div class="header">
+                                                                    <strong class="primary-font"> ${result.response.username}</strong>
+                                                                    <small class="pull-right text-muted"><i class="far fa-clock"></i>${result.response.date}</small>
+                                                                </div>
+                                                                <hr class="w-100">
+                                                                <p class="pr-2">
+                                                                   ${result.response.msg}
+                                                                </p>
+                                                            </div>
+                                                        </li>
+                        `);
+                        nextToken = result.response.token;
+                    }
+
+                    $("#messages").scrollTop($("#messages")[0].scrollHeight);
+
+                },
+                error: function () {
+
+            toastr.error("An error ocurred");
+        }
+            });
+        });
+
+    });
+</script>}

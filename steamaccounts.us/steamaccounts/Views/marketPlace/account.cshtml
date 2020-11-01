@@ -1,0 +1,350 @@
+﻿
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData[ "Title" ] = "Home Page";
+    ViewBag.logged = false;
+    csgo.csgoAccount csgoAccount = null;
+    List<csgo.core.ratesManager.rate> rates = null;
+    csgoAccount = csgo.accountsManager.getAccountById( ViewBag.csgoid ).Result;
+
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null && ViewBag.csgoid != null )
+    {
+        csgo.usersManager.userData account = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if ( csgoAccount != null && csgoAccount.status != csgo.status.selling)
+            csgoAccount = null ;
+        if (account != null)
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+            csgo.Controllers.adminController.tokenAccess.createToken(account.lastRequest, csgo.Controllers.adminController.tokenType.buyaccount);
+
+        }
+        if (csgoAccount != null)
+        {
+            rates = csgo.core.ratesManager.readRates(csgoAccount.sellerid).Result;
+
+        }
+    }
+    csgo.Controllers.adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, csgo.Controllers.adminController.tokenType.accountdata );
+
+}
+
+
+
+}
+
+<style>
+    .my-custom-scrollbar {
+        position: relative;
+        height: 200px;
+        overflow: auto;
+    }
+
+    .table-wrapper-scroll-y {
+        display: block;
+    }
+</style>
+
+
+<div class="modal fade " id="modalBuy" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog  modal-info modal-dialog-centered modal-notify" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header elegant-color-dark">
+                <p class="heading lead">Buy account</p>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class="white-text">&times;</span>
+                </button>
+            </div>
+
+            <!--Body-->
+            <div class="modal-body" id="modalBody"></div>
+
+            <!--Footer-->
+            <div class="modal-footer justify-content-center">
+                <a type="button" class="btn btn-outline-success" id="confirmBuy">Confirm buy</a>
+                <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+
+<div class="modal fade" id="successBuy" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered  modal-success" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header">
+                <p class="heading lead">Info</p>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class="white-text">&times;</span>
+                </button>
+            </div>
+
+            <!--Body-->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                    <p>
+                        You succesfully bought the account. You can view details of it on your profile.
+                    </p>
+                </div>
+            </div>
+
+            <!--Footer-->
+            <div class="modal-footer justify-content-center">
+                <a type="button" class="btn btn-success" onclick=" location.reload();">Ok</i></a>
+
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+@if (csgoAccount != null && !csgo.core.requestsHelper.processRequest(HttpContextAccessor.HttpContext.Request, 500, 15, 20))
+{
+
+
+    <main class="mt-5 pt-lg-5">
+        <div class="container">
+            <main role="main" class="row ">
+
+                <div class="col-md-8 card card promoting-card mr-5">
+                    <div class="card-body ">
+
+                        <a href="@csgoAccount.image" data-size="1600x1067">
+                            <img src="@csgoAccount.image" alt="placeholder"
+                                 class="img-fluid">
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-md-3 card card-ecommerce">
+
+                    <div class="card-body">
+                        @{var seller = csgo.usersManager.getDataByUsername(csgoAccount.seller).Result; }
+                        <h4 class="card-title font-weight-bold mb-2">@seller.username</h4>
+                        <h1 class="text-center text-dark font-weight-bold pt-2">
+                            @csgoAccount.price <i class="fas fa-euro-sign"></i>
+
+                        </h1>
+                        @{
+                            var sellerSince = (int)(DateTime.Now - seller.sellerDate).TotalDays;
+                        }
+                        <p class="text-center">Seller for @sellerSince Days</p>
+                        <div class="text-center align-self-center pb-3">
+
+                            <i class="far fa-star green-text"></i> @seller.positiveRates <i class="far fa-star red-text"></i> @seller.negativeRates
+                        </div>
+                        <table class="table mt-3">
+
+
+                            <tbody id="modalBody">
+
+
+                                <tr>
+                                    <th scope="row">Rank</th>
+                                    <td>@csgo.accountsManager.ranks[ @csgoAccount.rank ]</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Wins</th>
+                                    <td>@csgoAccount.wins</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Hours</th>
+                                    <td>@csgoAccount.hours</td>
+                                </tr>
+
+
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-block btn-dark-green btn-rounded waves-effect waves-light buyBtn" sqlid="@csgoAccount.id" price="@csgoAccount.price">Buy</button>
+                        <a type="button" onclick="window.open('https://steamcommunity.com/profiles/@csgoAccount.steamId64')" class="btn btn-block btn-blue-grey btn-rounded waves-effect waves-light mt-2"><i class="fab fa-steam"></i></a>
+                    </div>
+
+                </div>
+                <div class="col-md-8 card card-ecommerce mt-3 mr-5">
+                    <div class="card-body">
+
+                        <ul class="nav nav-tabs " id="myTab" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+                                   aria-selected="true">Description</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
+                                   aria-controls="profile" aria-selected="false">Reviews</a>
+                            </li>
+
+                        </ul>
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                                @csgoAccount.description
+                            </div>
+                            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+
+                                @if ( ViewBag.account != null )
+                                {
+                                    <table id="dtVerticalScrollExample" class="table table-borderless table-sm" cellspacing="0"
+                                           width="100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="th-sm">
+                                                    Username
+                                                </th>
+                                                <th class="th-sm">
+                                                    Rate
+                                                </th>
+                                                <th class="th-sm">
+                                                    Message
+                                                </th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            @foreach ( var rate in rates )
+                                            {
+                                                <tr>
+                                                    <td>@rate.raterUsername</td>
+                                                    <td>
+                                                        @if ( rate.value )
+                                                        {
+                                                            <i class="far fa-star green-text"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="far fa-star red-text"></i>
+                                                        }
+                                                    </td>
+                                                    <td>@rate.message</td>
+                                                </tr>
+                                            }
+
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <p class="text-black"> You need to be login to view rates.</p>
+                                }
+
+
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+                <div class="col-md-3 card card-ecommerce mt-3">
+                    <div class="card-body">
+
+
+
+
+                        <table class="table mt-3">
+                            <tbody id="modalBody">
+                                <tr>
+                                    <th scope="row">Community Banned</th>
+                                    <td id="communityBan">False</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">VAC</th>
+                                    <td id="vacBan">False</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Economy Ban</th>
+                                    <td id="economyBan">False</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+
+                    </div>
+                </div>
+            </main>
+        </div>
+
+
+    </main>
+    <script>
+        $(document).ready(() => {
+            $(".buyBtn").click(function (e) {
+                var account = $(this);
+                sqlid = account.attr("sqlid");
+                $("#modalBody").html(`
+     <p class="h5 text-center">Are you sure you want to buy this account?</p><br><p class="note note-danger"><strong>Note primary: </strong>You will be charged for ${account.attr("price")} <i class="fas fa-euro-sign"></i>.</p>
+`);
+
+
+                $("#modalBuy").modal('show');
+            });
+            $("#confirmBuy").click(function () {
+                $.ajax({
+                    url: '/marketPlace/buyAccount',
+                    type: 'GET',
+                    data: { id: sqlid },
+                    dataType: 'json',
+                    success: function (result) {
+                        $("modalBuy").modal('hide');
+                        console.log(`recieved result ${result}`);
+                        if (!result.success) {
+                            toastr.error(result.message);
+                        } else {
+
+                            $("#successBuy").modal('show');
+                            setTimeout(() => {
+                                toastr.success(result.message);
+
+                            }, 1000);
+
+                            setTimeout(() => {
+                                location.reload();
+                            }, 4000);
+                        }
+
+
+                    },
+                    error: function () {
+
+                        toastr.error("An error ocurred");
+                    }
+                });
+            });
+        });
+        $('#dtVerticalScrollExample').DataTable({
+            "scrollY": "200px",
+            "searching": false,
+            "scrollCollapse": true,
+        });
+        $.getJSON("https://steamaccounts.us/marketPlace/getAccountInfo?id=@csgoAccount.id", function (steamGetInfo) {
+            var players = JSON.parse(steamGetInfo).players;
+
+            if (players[0]) {
+                $("#vacBan").text(players[0].VACBanned);
+                $("#communityBan").text(players[0].CommunityBanned);
+                $("#economyBan").text(players[0].EconomyBan);
+            }
+        });
+      
+
+        var sqlid = -1;
+    </script>
+                            }
+                            else
+                            {
+                                HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "index", "home" ) );
+                            }

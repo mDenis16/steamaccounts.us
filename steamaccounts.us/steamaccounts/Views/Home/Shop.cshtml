@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<!-- Intro Section -->
+<div class="view jarallax" data-jarallax='{"speed": 0.2}' style="background-image: url(https://steamcdn-a.akamaihd.net/steamcommunity/public/images/items/730/ef7cb44d312df5038cba0f69a0901da427900645.jpg); background-repeat: no-repeat; background-size: cover; background-position: center center;">
+    <div class="mask rgba-white-light">
+
+        <div class="container h-100 d-flex justify-content-center align-items-center">
+            <div class="row pt-5 mt-3">
+                <div class="col-md-12 mb-3">
+                    <div class="intro-info-content text-center">
+                        <h1 class="display-3 mb-5 wow fadeInDown" data-wow-delay="0.3s">
+                            CSGO
+                            <a class="red-text font-weight-bold">ACCOUNTS</a>
+                        </h1>
+                        <h5 class="text-uppercase mb-5 mt-1 font-weight-bold wow fadeInDown" data-wow-delay="0.3s">
+                          F2F DELIVERY IN TIMISOARA COUNTY
+                        </h5>
+                        <a class="btn btn-outline-indigo btn-lg wow fadeInDown" data-wow-delay="0.3s">Our accounts</a>
+                        <a class="btn btn-indigo btn-lg wow fadeInDown" data-wow-delay="0.3s" href="@Url.Action("Index", "marketPlace")">Community Marketplace</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<main class="mt-5 pt-4">
+    <div class="container">
+        <main role="main" class="pb-3">
+<section class="section pb-3 wow fadeIn" data-wow-delay="0.3s">
+
+    <!--Section heading-->
+    <h1 class="font-weight-bold text-center h1 my-5">Our accounts</h1>
+    <!--Section description-->
+    <p class="text-center grey-text mb-5 mx-auto w-responsive">
+        Conturile noaster.
+
+        nustiu ce scariu aici
+    </p>
+
+
+    <div class="row d-flex justify-content-center">
+
+        @{
+            var accounts = csgo.accountsManager.loadAccounts(true).Result;
+            Console.WriteLine(Json.Serialize(accounts));
+
+            for (int i = 0; i < csgo.accountsManager.categories.Length; i++)
+            {
+                var categoryAccounts = accounts.FindAll(a => csgo.accountsManager.ranks[a.rank].Contains(csgo.accountsManager.categories[i]));
+
+
+                if (categoryAccounts.Count > 0)
+                {
+                    var lowestPrice = categoryAccounts.Min(account => account.price);
+                    var highestPrice = categoryAccounts.Max(account => account.price);
+                    <div class="col-lg-3 col-md-6 mb-4">
+
+                        <!--Card-->
+                        <div class="card card-ecommerce">
+
+                            <!--Card image-->
+                            <div class="view overlay z-depth-1">
+                                <img src="@csgo.accountsManager.getImageByCategory(i)" class="card-img-top"
+                                     alt="">
+                                <a>
+                                    <div class="mask rgba-white-slight"></div>
+                                </a>
+                            </div>
+                            <!--Card image-->
+                            <!--Card content-->
+                            <div class="card-body text-center no-padding">
+                                <!--Category & Title-->
+                                <a href="" class="text-muted">
+                                    <h5>Stock @categoryAccounts.Count</h5>
+                                </a>
+                                <h4 class="card-title">
+                                    <strong>
+                                        <a href="">@csgo.accountsManager.categories[i]</a>
+                                    </strong>
+                                </h4>
+
+                             
+                                <!--Card footer-->
+                                <div class="card-footer">
+                                    <span class="float-left">
+                                        @lowestPrice$
+
+                                    </span>
+                                    -
+                                    <span class="float-right">
+                                        @highestPrice$
+                                    </span>
+                                </div>
+
+                            </div>
+                            <!--Card content-->
+
+                        </div>
+                        <!--Card-->
+
+                    </div>
+                }
+            }
+
+        }
+
+    </div>
+
+
+</section>
+
+
+
+</main>
+</div>
+</main>>

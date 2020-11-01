@@ -1,0 +1,1135 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using TwoFactorAuthNet
+@using csgo.Controllers
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData account = null;
+   
+    List<csgo.core.logsManager.transactions.transaction> transactionLogs = new List<csgo.core.logsManager.transactions.transaction>();
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if (account != null)
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+            transactionLogs = await csgo.core.logsManager.transactions.readTransactionsLogs(account.id);
+            csgo.Controllers.adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, adminController.tokenType.viewaccount);
+          
+            adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, adminController.tokenType.changepass);
+            adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, adminController.tokenType.paysafe);
+            adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, adminController.tokenType.createdispute);
+            adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.requestwithdraw );
+
+        }
+
+    }
+
+}
+<script src="https://www.paypal.com/sdk/js?client-id=AeuVdX9orsHfZYcfmKKAaezVyBlCbCfZsQRMngDOsG7n0Mo2Pm9DAL24pIJoBmXMO-L_SG0vj4tltIRa">
+</script>
+@{
+    Console.WriteLine(account);
+    if (account != null)
+    {
+      
+        <main class="mt-5 pt-lg-5">
+
+            <div class="container">
+                <div class="modal fade" id="modalConfirmWithdraw" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-warning" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header">
+                                <p class="heading lead">Warning !</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="text-center">
+                                    <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                                    <p>
+                                        Are you sure you want to open a withdraw request? Your money will be in hold until an admin accept  your request.
+                                        You can withdraw all of your money.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!--Footer-->
+                            <div class="modal-footer justify-content-center">
+                                <a type="button" class="btn btn-success" id="confirmWithdraw">Yes</a>
+                                <a type="button" class="btn btn-outline-success waves-effect" data-dismiss="modal">No, thanks</a>
+                            </div>
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="modalConfirmPayPal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-info" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header">
+                                <p class="heading lead">Please set your paypal email</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="text-center">
+                                    <i class="fab fa-paypal fa-4x mb-3 animated rotateIn text-primary"></i>
+                                    <div class="md-form">
+                                        <input type="text" id="paypalBox1" class="form-control">
+                                        <label for="form1">Enter your paypal email</label>
+                                    </div>
+                                    <div class="md-form">
+                                        <input type="text" id="paypalBox2" class="form-control">
+                                        <label for="form1">Enter your paypal email x2</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--Footer-->
+                            <div class="modal-footer justify-content-center">
+                                <a type="button" class="btn btn-info" id="confirmPayPal">Yes</a>
+                                <a type="button" class="btn btn-outline-info waves-effect" data-dismiss="modal">No, thanks</a>
+                            </div>
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="modalConfirmChangePassword" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-warning" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header">
+                                <p class="heading lead">Warning !</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="text-center">
+                                    <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                                    <p>
+                                        Are you sure you want to change your password?
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!--Footer-->
+                            <div class="modal-footer justify-content-center">
+                                <a type="button" class="btn btn-success" id="confirmChangePassword">Yes</a>
+                                <a type="button" class="btn btn-outline-success waves-effect" data-dismiss="modal">No, thanks</a>
+                            </div>
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="modalConfirmDispute" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-warning" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header">
+                                <p class="heading lead">Warning !</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="text-center">
+                                    <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                                    <p>
+                                        Are you sure you want to open a dispute?
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!--Footer-->
+                            <div class="modal-footer justify-content-center">
+                                <a type="button" class="btn btn-success" id="confirmDispute">Yes</a>
+                                <a type="button" class="btn btn-outline-success waves-effect" data-dismiss="modal">No, thanks</a>
+                            </div>
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade " id="viewAccount" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-notify" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header elegant-color-dark">
+                                <p class="heading lead">Account manage</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <table class="table table-borderless">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col"></th>
+                                            <th scope="col"></th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modalBody">
+                                    </tbody>
+                                </table>
+                                <textarea id="rateMessage" placeholder="Write a rating to this seller.." class="md-textarea form-control" rows="3"></textarea>
+
+
+
+                                <div class="switch text-center pt-2">
+                                    <label>
+                                        Negative <i class="far fa-star red-text"></i>
+                                        <input type="checkbox" id="rating">
+                                        <span class="lever"></span><i class="far fa-star green-text"></i> Positive
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!--Footer-->
+                            <div class="modal-footer justify-content-center">
+                                <a type="button" class="btn btn-outline-elegant" id="rateSeller">Rate</a>
+                                <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+                            </div>
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="depositModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-success" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header elegant-color-dark">
+                                <p class="heading lead">Select your payment method</p>
+
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true" class="white-text">&times;</span>
+                                </button>
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="text-center">
+                                    <div class="md-form">
+                                        <input type="text" id="amountDeposit" class="form-control">
+                                        <label for="form1">Amount</label>
+                                    </div>
+
+                                    <div class="btn-group" role="group" aria-label="Basic example">
+
+
+                                        <form id="paypalForm" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+                                            <fieldset>
+                                                <input type="hidden" name="username" value="@account.username">
+
+                                                <input class="full-width" type="hidden" name="business" value="stoicaralucaadelina@gmail.com">
+                                                <input type="hidden" name="cmd" value="_xclick">
+                                                <input type="hidden" name="item_name" value="balance">
+                                                <input type="hidden" name="item_number" value="@account.id">
+                                                <input type="hidden" name="amount" id="amountDepositValue" value="0.01">
+                                                <input type="hidden" name="currency_code" value="EUR">
+                                                <input type="hidden" name="no_shipping" value="1">
+                                                <input type="hidden" name="return" value="https://steamaccounts.us">
+                                                <input type="hidden" name="notify_url" value="https://steamaccounts.us/ipn">
+                                                <button class="btn btn-warning  submit-button" type="submit" id="submitPayPal">Pay with PayPal</button>
+                                            </fieldset>
+
+                                        </form>
+                                        <a class="btn btn-warning  submit-button" id="submitPaySafe">Pay with Paysafe</a>
+                                        <a class="btn btn-warning  submit-button" id="submitFortumo">Pay with Mobile</a>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+
+
+
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="PayPalModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true" data-backdrop="false">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-success" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header elegant-color-dark">
+                                <p class="heading lead">Processing your payment</p>
+
+
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+                                <div class="d-flex justify-content-center">
+                                    <div class="preloader-wrapper big active">
+                                        <div class="spinner-layer spinner-blue-only">
+                                            <div class="circle-clipper left">
+                                                <div class="circle"></div>
+                                            </div>
+                                            <div class="gap-patch">
+                                                <div class="circle"></div>
+                                            </div>
+                                            <div class="circle-clipper right">
+                                                <div class="circle"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="d-flex justify-content-center text-center align-middle pt-3">
+                                    <span class="align-middle">It can takes 2-5 minutes to process the payment.</span>
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <div class="modal fade" id="checkCodeModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-notify modal-success" role="document">
+                        <!--Content-->
+                        <div class="modal-content">
+                            <!--Header-->
+                            <div class="modal-header elegant-color-dark">
+                                <p class="heading lead" id="modalTitleEmail">Your code is</p>
+
+
+                            </div>
+
+                            <!--Body-->
+                            <div class="modal-body">
+
+                                <div class="d-flex justify-content-center text-center align-middle pt-3">
+                                    <span class="align-middle" id="steamCode"></span>
+                                </div>
+
+
+
+                            </div>
+
+
+
+
+
+                        </div>
+                        <!--/.Content-->
+                    </div>
+                </div>
+                <main role="main" class="pt-5">
+                    <section class="section pb-3 wow fadeIn animated" data-wow-delay="0.3s"
+                             style="visibility: visible; animation-name: fadeIn; animation-delay: 0.3s;">
+
+
+
+                        <!-- Grid row -->
+                        <div class="row">
+
+                            <!--Grid column-->
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-lg-4 mb-5">
+                                        <div class="card promoting-card">
+
+                                            <!-- Card content -->
+                                            <div class="card-body d-flex flex-row">
+
+
+                                                <!-- Content -->
+                                                <div>
+
+                                                    <!-- Title -->
+                                                    <h4 class="card-title font-weight-bold mb-2">Hello @account.username</h4>
+                                                    <!-- Subtitle -->
+                                                    <p class="card-text"><i class="far fa-clock pr-2"></i>These are your account informations</p>
+
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Card image -->
+                                            <!-- Card content -->
+                                            <div class="card-body">
+
+                                                <div class="collapse-content">
+
+                                                    <!-- Text -->
+                                                    <p class="card-text">Member since: @account.registerDate.ToString( )</p>
+                                                    @{string eligible = account.seller ? "Yes" : "No";}
+                                                    <p class="card-text">Seller eligibility: <mdb-badge pill="true" warning="true"> @eligible </mdb-badge> </p>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                        <div class="card promoting-card mt-5  pb-5">
+
+                                            <!-- Card content -->
+                                            <div class="card-body d-flex flex-row">
+
+
+                                                <!-- Content -->
+                                                <div>
+
+                                                    <!-- Title -->
+                                                    <h4 class="card-title font-weight-bold mb-2">Balance status</h4>
+                                                    <!-- Subtitle -->
+                                                    <p class="card-text">
+                                                        <i class="fas fa-credit-card pr-2"></i>These are your balance informations
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                            <!-- Card image -->
+                                            <!-- Card content -->
+                                            <div class="card-body">
+
+
+                                                <!-- Text -->
+                                                <h1 class="text-center text-dark font-weight-bold">
+                                                    Balance
+                                                    @account.balance <i class="fas fa-euro-sign"></i>
+                                                </h1>
+                                              
+
+                                                <div class="text-center text-center pt-3">
+                                                    <button type="button" class="btn btn-default" id="depositBtn">Deposit</button>
+                                                    <button type="button" class="btn btn-info" id="withdrawBtn">Withdraw</button>
+                                                </div>
+
+
+
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-8">
+
+                                        <ul class="nav nav-dark nav-tabs md-tabs elegant-color" id="myTabMD" role="tablist">
+                                            <li class="nav-item">
+                                                <a class="nav-link active" id="home-tab-md" data-toggle="tab" href="#home-md" role="tab"
+                                                   aria-controls="home-md" aria-selected="true">Selling</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="profile-tab-md" data-toggle="tab" href="#profile-md" role="tab"
+                                                   aria-controls="profile-md" aria-selected="false">Bought</a>
+                                            </li>
+                                             <li class="nav-item">
+                                                <a class="nav-link" id="revoked-tab-md" data-toggle="tab" href="#revoked-md" role="tab"
+                                                   aria-controls="revoked-md" aria-selected="false">Revoked</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="contact-tab-md" data-toggle="tab" href="#contact-md" role="tab"
+                                                   aria-controls="contact-md" aria-selected="false">Transactions</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link" id="settings-tab-md" data-toggle="tab" href="#settings-md" role="tab"
+                                                   aria-controls="settings-md" aria-selected="false">Settings</a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content card pt-5" id="myTabContentMD">
+                                            <div class="tab-pane fade show active" id="home-md" role="tabpanel" aria-labelledby="home-tab-md">
+                                                <div class="table-responsive" style=" overflow-y: auto; height: 500px;">
+                                                    <!--Table-->
+                                                    <table class="table table-striped">
+
+                                                        <!--Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Username</th>
+                                                                <th>Status</th>
+                                                                <th>Edit</th>
+                                                                <th>Dispute</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--Table head-->
+                                                        <!--Table body-->
+                                                        <tbody>
+                                                            @{
+                                                                foreach ( var csgoAccount in await csgo.accountsManager.loadUserAccounts( account.username ) )
+                                                                {
+                                                                                                                        <tr>
+                                                                                                                            <th scope="row">@csgoAccount.id</th>
+                                                                                                                            <td>@csgoAccount.username</td>
+
+
+
+                                                                                                                            <td>@csgo.accountsManager.statusName[ ( int ) csgoAccount.status ]</td>
+                                                                                                                           
+                                                                                                                          
+                                                                                                                       
+                                                                                                                                <td><a class="btn btn-sm btn-dark" href="@Url.Action("requestEditAccount", "ticket", new { id = csgoAccount.ticketId })">Edit</a></td>
+                                                                                                                            
+                                                                                                                            @if ( csgoAccount.ticketId != -1 )
+                                                                                                                            {
+                                                                                                                                <td><a class="btn btn-sm btn-dark" href="@Url.Action("requestViewDispute", "ticket", new { id = csgoAccount.ticketId })">View dispute</a></td>
+                                                                                                                            }
+
+                                                                                                                            else
+                                                                                                                            {
+                                                                                                                                <td>None</td>
+
+                                                                                                                            }
+                                                                                                                        </tr>
+                                                                }
+                                                            }
+
+
+                                                        </tbody>
+                                                        <!--Table body-->
+                                                    </table>
+                                                    <!--Table-->
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="profile-md" role="tabpanel" aria-labelledby="profile-tab-md">
+                                                <div class="table-responsive">
+                                                    <!--Table-->
+                                                    <table class="table table-striped">
+
+                                                        <!--Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Username</th>
+                                                                <th>Rank</th>
+                                                                <th>Info</th>
+                                                                <th>Seller</th>
+                                                                <th>Price</th>
+                                                                <th>Actions</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--Table head-->
+                                                        <!--Table body-->
+                                                        <tbody>
+                                                            @{
+                                                                foreach ( var csgoAccount in await csgo.accountsManager.loadBoughtAccounts( account.username ) )
+                                                                {
+                                                                    <tr>
+                                                                        <th scope="row">@csgoAccount.id</th>
+                                                                        <td>@csgoAccount.username</td>
+
+                                                                        <td>
+                                                                            @{
+                                                                                if ( csgoAccount.rank != -1 )
+                                                                                {
+                                                                                    @csgo.accountsManager.ranks[ csgoAccount.rank ]
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    <p>STEAM</p>
+                                                                                }
+
+                                                                            }
+                                                                        </td>
+                                                                        <td>
+                                                                            @{if ( csgoAccount.prime )
+                                                                                { <span class="badge badge-info">Prime</span>} }
+                                                                            <span class="badge badge-info">@csgoAccount.hours hours</span>
+                                                                            <span class="badge badge-info">@csgoAccount.wins wins</span>
+                                                                        </td>
+                                                                        <td>@csgoAccount.seller</td>
+                                                                        <td>@csgoAccount.price</td>
+
+
+                                                                        @if ( csgoAccount.ticketId != -1 )
+                                                                        {
+                                                                            <td><a class="btn btn-sm btn-dark" href="@Url.Action("requestViewDispute", "ticket", new { id = csgoAccount.ticketId })">View dispute</a></td>
+                                                                        }
+
+                                                                        else
+                                                                        {
+                                                                            <td><button type="button" class="btn btn-sm btn-dark createDispute" csgoId="@csgoAccount.id">Create dispute</button></td>
+
+                                                                        }
+
+
+                                                                        <td><button type="button" class="btn  btn-sm btn-info viewAccount" sqlid="@csgoAccount.id">View</button></td>
+                                                                    </tr>
+                                                                }
+                                                            }
+
+
+                                                        </tbody>
+                                                        <!--Table body-->
+                                                    </table>
+                                                    <!--Table-->
+                                                </div>
+                                            </div>
+ <div class="tab-pane fade" id="revoked-md" role="tabpanel" aria-labelledby="revoked-tab-md">
+                                                <div class="table-responsive">
+                                                    <!--Table-->
+                                                    <table class="table table-striped">
+
+                                                        <!--Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Username</th>
+                                                                <th>Reason</th>
+                                                                <th>Date</th>
+                                                                <th>Actions</th>
+
+                                                            </tr>
+                                                        </thead>
+                                                        <!--Table head-->
+                                                        <!--Table body-->
+                                                        <tbody>
+                                                            @{
+                                                                foreach ( var csgoAccount in await csgo.accountsManager.GetRevokedAccounts( account.id ) )
+                                                                {
+                                                                    <tr>
+                                                                        <th scope="row">@csgoAccount.id</th>
+                                                                        <td>@csgoAccount.username</td>
+                                                                        <td>@csgoAccount.reason </td>
+                                                                        <td>@csgoAccount.date.ToLongTimeString() </td>
+
+                                                                        <td><button type="button" id="@csgoAccount.id"class="btn btn-block btn-success btn-rounded viewRecoveryCode">Recover change code</button></td>
+                                                                    </tr>
+                                                                }
+                                                            }
+
+
+                                                        </tbody>
+                                                        <!--Table body-->
+                                                    </table>
+                                                    <!--Table-->
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="contact-md" role="tabpanel" aria-labelledby="contact-tab-md">
+                                                <div class="table-responsive"  style=" overflow-y: scroll;
+            height: 500px;">
+                                                    <!--Table-->
+                                                    <table class="table table-striped">
+
+                                                        <!--Table head-->
+                                                        <thead>
+                                                            <tr>
+                                                                <th>#</th>
+                                                                <th>Type</th>
+                                                                <th>Method</th>
+                                                                <th>Amount</th>
+                                                                <th>Status</th>
+                                                                <th>Release date</th>
+                                                                <th>Date</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <!--Table head-->
+                                                        <!--Table body-->
+                                                        <tbody>
+                                                            @{
+                                                                foreach ( var transaction in transactionLogs.OrderByDescending( a => a.date ) )
+                                                                {
+                                                                                                                        <tr>
+                                                                                                                            <th scope="row">@transaction.id</th>
+                                                                                                                            <td>
+                                                                                                                                @{
+                                                                                                                                    switch ( transaction.type )
+                                                                                                                                    {
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionType.buy:
+                                                                                                                                            <span class="badge badge-primary">Buy</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionType.sell:
+                                                                                                                                            <span class="badge badge-warning">Sell</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionType.withdraw:
+                                                                                                                                            <span class="badge badge-light">Withdraw</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionType.deposit:
+                                                                                                                                            <span class="badge badge-success">Deposit</span>
+                                                                                                                                            break;
+                                                                                                                                        default:
+                                                                                                                                            break;
+                                                                                                                                    }
+
+
+                                                                                                                                }
+                                                                                                                            </td>
+                                                                                                                            <td>
+                                                                                                                                @{
+                                                                                                                                    switch ( transaction.method )
+                                                                                                                                    {
+                                                                                                                                        case csgo.core.logsManager.transactions.methodType.paypal:
+                                                                                                                                            <span class="badge badge-success">PayPal</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.methodType.paysafe:
+                                                                                                                                            <span class="badge badge-primary">PaySafe Card</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.methodType.mobile:
+                                                                                                                                            <span class="badge badge-danger">Mobile</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.methodType.balance:
+                                                                                                                                            <span class="badge badge-info">Balance</span>
+                                                                                                                                            break;
+
+                                                                                                                                        default:
+                                                                                                                                            break;
+                                                                                                                                    }
+
+
+                                                                                                                                }
+                                                                                                                            </td>
+                                                                                                                            <td>@transaction.amount</td>
+
+                                                                                                                            <td>
+                                                                                                                                @{
+                                                                                                                                    switch ( transaction.status )
+                                                                                                                                    {
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionStatus.inpending:
+                                                                                                                                            <span class="badge badge-warning">Hold</span>
+                                                                                                                                            break;
+                                                                                                                                        case csgo.core.logsManager.transactions.transactionStatus.complete:
+                                                                                                                                            <span class="badge badge-success">Complete</span>
+                                                                                                                                            break;
+                                                                                                                                     
+                                                                                                                                        default:
+                                                                                                                                            break;
+                                                                                                                                    }
+
+
+                                                                                                                                }
+                                                                                                                            
+                                                                                                                            </td>
+                                                                                                                            <td>@transaction.confirmDate.ToShortDateString()</td>
+                                                                                                                           
+                                                                                                                            <td>@transaction.date.ToString( )</td>
+                                                                                                                        </tr>
+                                                                }
+                                                            }
+
+
+                                                        </tbody>
+                                                        <!--Table body-->
+                                                    </table>
+                                                    <!--Table-->
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade row" id="settings-md" role="tabpanel" aria-labelledby="settings-tab-md">
+                                                <div class="col-6 row p-md-5">
+                                                    <div class="md-form">
+                                                        <input type="password" id="oldPassword" class="form-control">
+                                                        <label for="oldPassword">Current password</label>
+
+                                                    </div>
+                                                    <div class="md-form">
+                                                        <input type="password" id="newPassword" class="form-control" aria-describedby="help">
+                                                        <label for="newPassword">New password</label>
+                                                        <small id="help" class="form-text text-muted">
+                                                            Your password must be 8-20 characters long, contain letters and numbers, and must not contain spaces,
+                                                            special characters, or emoji.
+                                                        </small>
+                                                    </div>
+                                                    <div class="col-6"><button type="button" class="btn btn-danger btn-rounded" id="changePassBtn">Change password</button></div>
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </main>
+
+
+        <script>
+    var curSqlId = -1;
+    $(document).ready(() => {
+
+        var accountId = @Html.Raw(account.id);
+        var username = '@Html.Raw(account.username);'
+        $("#changePassBtn").click(function () {
+            $("#modalConfirmChangePassword").modal('show');
+        });
+        $("#amountDeposit").change(function () {
+            $("#amountDepositValue").val($(this).val());
+        });
+          
+        $("#amountDeposit").bind("keyup change", function (e) {
+
+            $("#amountDepositValue").val(curValue);
+
+
+
+        });
+        $("#submitPaySafe").click(function () {
+            if (isNaN($("#amountDeposit").val())) {
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 1 euro`);
+                return;
+            }
+           if ($("#amountDeposit").val() < 1) {
+
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 1 euro`);
+                return;
+            }
+            window.location = '/paySafeProcessor?amount=' + $("#amountDeposit").val();
+
+        });
+        $("#submitFortumo").click(function () {
+            if (isNaN($("#amountDeposit").val())) {
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 2 euro`);
+                return;
+            }
+            if ($("#amountDeposit").val() < 1) {
+
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 2 euro`);
+                return;
+            }
+            if ($("#amountDeposit").val() >  4) {
+
+                event.preventDefault();
+                toastr.error(`Maximum deposit is 4 euro`);
+                return;
+            }
+            window.location = '/fortumoProcessor?amount=' + $("#amountDeposit").val();
+
+        });
+        //$("#submitPaySafe").attr("href", "https://" + `paymentbox.e-payouts.com/?uid=5377&mid=2290&price=${$("#amountDeposit").val()}&pm=paysafecard&title=steamaccounts.us&name=${username}&ucode=${accountId}&shrink=false`)
+        $(".viewAccount").click(function () {
+            curSqlId = $(this).attr("sqlid");
+            $.ajax({
+                url: '/marketPlace/viewAccount',
+                type: 'GET',
+                data: { id: curSqlId },
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    $("#viewAccount").modal('show');
+                    data = data.response;
+                    $("#modalBody").empty();
+                    $("#modalBody").append(`
+
+                            <tr>
+                                <th scope="row">Username</th>
+                                <td>${data.username}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Passowrd</th>
+                                <td class="md-form"> <input type="text" class="form-control disabled" value="${data.password}"> </td>
+
+
+
+                            <tr>
+                                <th scope="row">Change email </th>
+                                <td class="md-form">    <button type="button" class="btn btn-block btn-success btn-rounded viewEmailCode">Get change code</button></td>
+
+
+
+
+                            </tr>
+     `);
+
+
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $(".editAccount").click(function () {
+            curSqlId = $(this).attr("sqlid");
+            $.ajax({
+                url: '/marketPlace/viewEditAccount',
+                type: 'GET',
+                data: { id: curSqlId },
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    $("#viewAccount").modal('show');
+                    data = data.response;
+                    $("#modalBody").empty();
+                    $("#modalBody").append(`
+
+                            <tr>
+                                <th scope="row">Username</th>
+                                <td>${data.username}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Passowrd</th>
+                                <td class="md-form"> <input type="text" class="form-control" id="password" value="${data.password}"> </td>
+                            </tr>
+     `);
+
+
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $("#withdrawBtn").click(function () {
+            $("#modalConfirmWithdraw").modal('show');
+        });
+        $("#confirmWithdraw").click(function () {
+            $.ajax({
+                url: "/profile/requestWithdraw",
+                type: 'GET',
+                data: {},
+                dataType: 'json',
+                success: function (result) {
+
+                    if (result.nopaypal) {
+                        $("#modalConfirmPayPal").modal('show');
+                        return;
+                    }
+                    toastr.error(result.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                
+
+
+                },
+                error: function () {
+
+                }
+            });
+        });
+        $("#confirmPayPal").click(function () {
+            if ($("#paypalBox1").val() != $("#paypalBox2").val()) {
+                toastr.error('PayPal doesnt match.');
+                return;
+            }
+            $.ajax({
+                url: "/profile/setPayPal",
+                type: 'GET',
+                data: { paypal: $("#paypalBox1").val() },
+                dataType: 'json',
+                success: function (result) {
+
+                    toastr.error(result.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+
+
+
+                },
+                error: function () {
+
+                }
+            });
+        });
+        $('body').on('click', '.viewEmailCode', function () {
+
+            $.ajax({
+                url: "/marketPlace/readEmailCode",
+                type: 'GET',
+                data: {},
+                dataType: 'json',
+                success: function (result) {
+
+                    if (!result.success) {
+                        toastr.error(result.message);
+                    } else {
+                        $("#checkCodeModal").modal('show');
+                        console.log(result.code);
+                        $("#steamCode").html(result.code);
+                    }
+
+
+                },
+                error: function () {
+
+                }
+            });
+        });
+    $('body').on('click', '.viewRecoveryCode', function () {
+
+            $.ajax({
+                url: `/profile/readEmailRecovery?id=${$(this).attr('id')}`,
+                type: 'GET',
+                data: {},
+                dataType: 'json',
+                success: function (result) {
+
+                    if (!result.success) {
+                        toastr.error(result.message);
+                    } else {
+                        $("#checkCodeModal").modal('show');
+                        console.log(result.code);
+                        $("#steamCode").html(result.code);
+                    }
+
+
+                },
+                error: function () {
+
+                }
+            });
+        });
+
+
+        var curCsgoID = undefined;
+        $(".createDispute").click(function () {
+            curCsgoID = $(this).attr("csgoId");
+
+            $("#modalConfirmDispute").modal('show');
+        });
+        $("#confirmDispute").click(function () {
+            $.ajax({
+                url: '/ticket/createDispute',
+                type: 'GET',
+                data: { csgoId: curCsgoID },
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    toastr.success("Your dispute was succesfully created. Redirecting in 3 seconds.");
+                    setTimeout(() => {
+                        window.location = "/ticket/requestViewDispute?id=" + data.id;
+                    }, 2000);
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $("#confirmChangePassword").click(function () {
+            if ($("#oldPassword").val() == $("#newPassword").val()) {
+                toastr.error("New password can't be the same as old one.");
+                return;
+            }
+            $.ajax({
+                url: '/login/changePassword',
+                type: 'GET',
+                data: { oldPassword: $("#oldPassword").val(), newPassword: $("#newPassword").val() },
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    toastr.success("You password was succesfully changed.");
+
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $("#rateSeller").click(() => {
+            var message = $("#rateMessage").val();
+            if (message.includes('muie') || message.includes('teapa') || message.includes('pula') || message.includes('malakie') || message.includes('pizda') || message.includes('mata') || message.includes('cristos') || message.includes('gaoz')) {
+                toastr.error("Your message contains forbidden words.");
+                return;
+            }
+
+
+            $.ajax({
+                url: '/marketPlace/sendRate',
+                type: 'GET',
+                data: { data: JSON.stringify({ csgoId: curSqlId, message: message, rate: $("#rating").prop("checked") })},
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    toastr.success(data.message);
+
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $("#depositBtn").click(() => {
+            $("#depositModal").modal('show');
+        });
+        $("#changePassword").click(() => {
+            $("#depositModal").modal('show');
+        });
+        $("#submitPayPal").click(() => {
+           if ($("#amountDepositValue").val() < 1) {
+
+                event.preventDefault();
+                toastr.error(`Minimum deposit is
+                `);
+                return;
+            }
+            $("#depositModal").modal('hide');
+            $("#PayPalModal").modal('show');
+        });
+    });
+        </script>
+    }
+    else
+    {
+        <p>error</p>Console.WriteLine("muie");
+    }
+}

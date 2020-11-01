@@ -1,0 +1,170 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+@{
+    Layout = null;
+}
+
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>steamaccounts.us</title>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="~/css/bootstrap.min.css">
+    <!-- Material Design Bootstrap -->
+    <link rel="stylesheet" href="~/css/mdb.min.css">
+    <link rel="stylesheet" href="~/css/addons/datatables.min.css">
+    <link rel="stylesheet" href="~/css/addons/datatables-select.min.css">
+    <!-- Your custom styles (optional) -->
+    <link rel="stylesheet" href="~/css/style.css">
+    <style>
+        .collapsible-body {
+            display: none;
+        }
+    </style>
+    @if ( Context.Request.Path.Value.Contains( "market" ) )
+    {
+
+        <script data-ad-client="ca-pub-4301162217076339" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    }
+
+    <script type="text/javascript" src="~/js/jquery.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="~/js/popper.min.js"></script>
+    <script type="text/javascript" src="~/js/addons/datatables.min.js"></script>
+    <script type="text/javascript" src="~/js/addons/datatables-select.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="~/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="~/js/mdb.min.js"></script>
+</head>
+<body class="black-skin">
+    <header>
+      
+    </header>
+    <main class="mt-5 pt-lg-5">
+        <div class="container">
+            <main role="main" class="pb-3 pt-xl-5 ml-5 mr-5 pl-5 pr-5">
+                <section class="section pb-3 wow fadeIn animated" data-wow-delay="0.3s"
+                         style="visibility: visible; animation-name: fadeIn; animation-delay: 0.3s;">
+                    <div class="card card-ecommerce mb-2">
+                        <div class="card-header text-center " style="background-color: rgb(216, 71, 89);">
+                            <h1 style="color: rgb(255, 255, 255);">raul2k</h1>
+                        </div>
+                        <div class="card-body">
+                            <div class="">
+                                <div class="row">
+                                    <div class="col-sm">
+                                        <div class="input-group mb-3">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text" id="basic-addon1">@@</span>
+                                            </div>
+                                            <input type="text" class="form-control" id="username" placeholder="Username"
+                                                   aria-label="Username" aria-describedby="basic-addon1">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm">
+                                        <div class="input-group mb-3">
+
+                                            <input type="text" class="form-control"
+                                                   aria-label="Amount (to the nearest euro)" id="amount">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Message</span>
+                                    </div>
+                                    <textarea class="form-control" aria-label="Message" id="message" rows="5"></textarea>
+                                </div>
+                                <div class="text-center mt-5">
+
+                                    <div class="row">
+
+                                        <div class="col-sm">
+                                            <a class="btn btn-success  submit-button" id="submitPaySafe">Pay with Paysafe</a>
+                                        </div>
+                                        <div class="col-sm">
+                                            <a class="btn btn-warning  submit-button" id="submitFortumo">Pay with Mobile</a>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </main>
+    
+
+</body>
+<script>
+    $(document).ready(() => {
+
+
+        $("#submitPaySafe").click(function () {
+            if (isNaN($("#amount").val())) {
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 1 euro`);
+                return;
+            }
+            if ($("#message").val().length > 50) {
+                toastr.error(`Your message is too longer.`);
+                return;
+            }
+            if ($("#amount").val() < 1) {
+
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 1 euro`);
+                return;
+            } 
+            window.location = `/donatepaySafeProcessor?amount=${$("#amount").val()}&message=${$("#message").val()}&username=${$("#username").val()}`;
+
+        });
+        $("#submitFortumo").click(function () {
+            if (isNaN($("#amount").val())) {
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 2 euro`);
+                return;
+            }
+            if ($("#message").val().length > 50) {
+                toastr.error(`Your message is too longer.`);
+                return;
+            }
+            if ($("#amount").val() < 1) {
+
+                event.preventDefault();
+                toastr.error(`Minimum deposit is 2 euro`);
+                return;
+            }
+            if ($("#amount").val() > 4) {
+
+                event.preventDefault();
+                toastr.error(`Maximum deposit is 4 euro`);
+                return;
+            }
+            window.location = `/donatefortumoProcessor?amount=${$("#amount").val()}&message=${$("#message").val()}&username=${$("#username").val()}`;
+        });
+    });
+
+</script>
+</html>

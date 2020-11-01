@@ -1,0 +1,204 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+ 
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData userData = null;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        userData = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if ( userData != null )
+        {
+            ViewBag.account = userData;
+            ViewBag.logged = true;
+            adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.admin );
+        }
+        else
+        {
+            HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "index", "home" ) );
+        }
+    }
+    if ( userData != null && userData.admin )
+    {
+    <div class="modal fade " id="modalActions" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-notify" role="document">
+            <!--Content-->
+            <div class="modal-content">
+                <!--Header-->
+                <div class="modal-header elegant-color-dark">
+                    <p class="heading lead">Withdraw money</p>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" class="white-text">&times;</span>
+                    </button>
+                </div>
+
+                <!--Body-->
+                <div class="modal-body" id="modalBody">
+                  
+
+                </div>
+
+                <!--Footer-->
+                <div class="modal-footer justify-content-center">
+                    <a type="button" class="btn btn-outline-elegant" id="confirmWithdraw" >CONFIRM WITHDRAW</a>
+                    <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+                </div>
+            </div>
+            <!--/.Content-->
+        </div>
+    </div>
+
+    <main class="mt-5 pt-4">
+        <div class="container">
+            <main role="main" class="pt-lg-5">
+                <section class="section pt-3" data-wow-delay="0.3s">
+
+                    <div class="card ">
+                        <h5 class="card-header info-color white-text text-center py-4 elegant-color">
+                            <strong>Disputes</strong>
+                        </h5>
+                        <div class="card-body table-responsive">
+                            <table id="dtBasicExample" class="table table-striped  table-sm" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th class="th-sm text-center">
+                                            #
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            UserId
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Date
+
+                                        </th>
+
+                                        <th class="th-sm text-center">
+                                            Ammount
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Accepted
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Action
+
+                                        </th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+
+                                    @foreach ( var request in csgo.core.balanceManager.getAllWithdrawRequests().Result.OrderByDescending( a => a.accepted ).OrderByDescending( a => a.date ) )
+                                    {
+                                    <tr sqlid="@request.id">
+                                        <td class="text-center align-middle">@request.id</td>
+                                        <td class="text-center align-middle">@request.userId</td>
+                                        <td class="text-center align-middle">@request.date.ToString( )</td>
+                                        <td class="text-center align-middle">@request.amount</td>
+                                        <td class="text-center align-middle">@request.accepted</td>
+                                        <td class="text-center align-middle"><button type="button" sqlid="@request.id" class="btn btn-success withdrawAccept">MARK AS COMPLETED</button></td>
+
+
+
+
+                                    </tr>
+
+                                    }
+
+
+
+
+
+
+                                </tbody>
+                                <tfoot>
+
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Editable table -->
+
+                </section>
+
+
+
+            </main>
+        </div>
+    </main>
+
+    <script>
+        var curSqlId = -1;
+
+        $(document).ready(function () {
+
+
+            $('#dtBasicExample').DataTable();
+            $('.dataTables_length').addClass('bs-select');
+
+            $('body').on('click', '.withdrawAccept', function () {
+
+                var sqlid = $(this).attr("sqlid");
+
+                console.log(sqlid);
+                if (sqlid) {
+                    curSqlId = sqlid;
+
+                    $("#modalActions").modal('show');
+                    $.getJSON('@Url.Action( "getWithdrawData", "admin" )', { id: curSqlId }, function (data) {
+                        data = data.data;
+                        if (data) {
+                            $("#modalBody").empty();
+                            $("#modalBody").append(`
+
+                            <p>Please send ${data.amount} to ${data.paypalemail}.</p>
+                         `);
+
+                            $("#modalActions").modal('show');
+
+                        }
+                    });
+
+                }
+
+            });
+       
+            $("#confirmWithdraw").click(function () {
+
+
+
+                $.getJSON('@Url.Action( "acceptWithdraw", "admin" )', { id: curSqlId }, function (data) {
+                    if (!data.success) {
+                        toastr.error(data.message);
+                        return;
+                    }
+                    console.log(data.message);
+                    toastr.success(data.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                 
+                });
+            });
+            $("#modalActions").on('hidden.bs.modal', function () {
+                location.reload();
+            });
+
+        });
+    </script>
+        }
+        else
+        {
+            HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "index", "home" ) );
+        }
+    }

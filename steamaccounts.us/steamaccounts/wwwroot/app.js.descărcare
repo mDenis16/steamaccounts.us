@@ -1,0 +1,1108 @@
+// ***********************************************************************
+// START Document load events
+// *********************************************************************** 
+$(document).ready(function() {      
+    // *********************************************************************** 
+    // Prevent form submit from inputs and change enter with tab
+    // ***********************************************************************
+    // register jQuery extension
+    jQuery.extend(jQuery.expr[':'], {
+        focusable: function (el, index, selector) {
+            return $(el).is('a, button, :input, [tabindex]');
+        }
+    });
+    
+    $(document).on('keypress', 'input, select', function (e) {
+        if (e.which == 13) {
+            e.preventDefault();
+            // Get all focusable elements on the page
+            var $canfocus = $(':focusable');
+            var index = $canfocus.index(document.activeElement) + 1;
+            if (index >= $canfocus.length) index = 0;
+            $canfocus.eq(index).focus();
+        }
+    });
+
+    // *******************************************************************
+    // Payment Methods fixed nav
+    // *******************************************************************    
+    if($('nav#pmethods').is(':visible')) {
+        if ($(document).scrollTop() > 70) {
+            $('nav#pmethods').addClass(SHRINK);
+            $('section#main').addClass(SHRINK);
+        } 
+        else {
+            $('nav#pmethods').removeClass(SHRINK);
+            $('section#main').removeClass(SHRINK);
+        }
+    }
+    
+    // *******************************************************************
+    // Load default payment method form
+    // ******************************************************************* 
+    if (typeof CURRENT_PAYMENT_METHOD !== 'undefined' && CURRENT_PAYMENT_METHOD !== null && CURRENT_PAYMENT_METHOD != '') {
+        $('div#'+CURRENT_PAYMENT_METHOD).fadeIn('slow');
+    } 
+
+    // *******************************************************************
+    // Inputmask init
+    // *******************************************************************     
+    $(".date").inputmask();
+        
+    // *********************************************************************** 
+    // Input fields focus
+    // ***********************************************************************   
+    $('body').on('focus click', 'form input.error, form textarea.error', function(e) {
+        $(this).removeClass('error');
+        $(this).next().remove(); 
+    });
+    
+    $('body').on('focus click', 'form span.select-error', function(e) {
+        $(this).removeClass('select-error');
+        $(this).next().remove(); 
+    });
+        
+    // *******************************************************************
+    // Select2 lib init
+    // *******************************************************************         
+    $('select').select2({
+        minimumResultsForSearch: '10'
+    });
+    
+    // ******************************************************************* 
+    // Select2 formated init
+    // *******************************************************************     
+    $("select.location, select.country").select2({
+        data: ISO_COUNTRIES,
+        escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+        templateResult: formatCountry,
+        templateSelection: formatCountrySelection
+    });
+    
+    if (typeof ASTROPAY_TYPE !== 'undefined') {
+        $("select#astropay-type").select2({
+            data: ASTROPAY_TYPE,
+            escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+            templateResult: formatAstropayType,
+            templateSelection: formatAstropayTypeSelection
+        });
+    }
+
+    if (typeof PAYVALIDA_TYPE !== 'undefined') {
+        $("select#payvalida-type").select2({
+            data: PAYVALIDA_TYPE,
+            escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+            templateResult: formatPayvalidaType,
+            templateSelection: formatPayvalidaTypeSelection
+        });
+    }
+    
+    // ******************************************************************* 
+    // Select2 selected val
+    // *******************************************************************      
+    $('select#location').val(COUNTRY.toUpperCase()).trigger('change.select2'); 
+
+    // ******************************************************************* 
+    // Set country phone code in SEPA and QIWI form
+    // *******************************************************************
+    $("input#sepa-phonecode, input#qiwi-phonecode").val('+'+COUNTRY_PHONE_CODE[COUNTRY.toUpperCase()]);
+
+    // ******************************************************************* 
+    // Show access code container
+    // *******************************************************************      
+    if (typeof CURRENT_PAYMENT_METHOD !== 'undefined' && CURRENT_PAYMENT_METHOD !== null && CURRENT_PAYMENT_METHOD != '' && $('input#code-0').val().length>0) {
+        $('div.form-data-container').fadeOut('fast', function() {
+            $('a.toggle-access-code').html('<i class="fa fa-angle-left" aria-hidden="true"></i> '+$('a.toggle-access-code').data('hide'));
+            $('div.access-code-container').fadeIn('slow');    
+        }); 
+    } 
+
+    // ******************************************************************* 
+    // Change location
+    // ******************************************************************* 
+    $('select#location').change(function(e) {
+        // Prevent form submit
+        e.preventDefault();
+        
+        // Show PRELOADER (Chaining support)
+        $('body').prelodr('in', LOADER_TEXT);
+        
+        // LOOP stop it!
+        clearInterval(RECURSIVE_INTERVAL_ID);
+        RECURSIVE_TIMEOUT = 1;
+        
+        var form = $(this).parents('form:first');
+        var location = $(this).val();
+        
+        $.post(form.attr('action'), form.serialize(), function(jsonResponse) {         
+            if (jsonResponse.status==0) {
+                // Draw error/warning msg
+                $('section#main').html(jsonResponse.message);                 
+            }
+            else if (jsonResponse.status==1) {
+                // Update GLOBAL vars
+                COUNTRY = location;
+                LANG = jsonResponse.data.def.lang;
+                COUNT_PAYMENT_METHODS = jsonResponse.data.def.count_methods;
+                CURRENT_PAYMENT_METHOD = jsonResponse.data.def.dm;
+                
+                // Update form params
+                $('form#data-form input[name="country"]').val(location);
+                $('form#data-form input[name="lang"]').val(jsonResponse.data.def.lang);
+                $('form#data-form input[name="dm"]').val(jsonResponse.data.def.dmurl);
+                // Set price formatted
+                $('div#transaction-info p.transaction-amount span.amount_number').html(jsonResponse.data.def.price_formated);  
+                                   
+                // Change header translated text
+                if (!jQuery.isEmptyObject(jsonResponse.data.translations)) {
+                    // Translate Loader text
+                    LOADER_TEXT = jsonResponse.data.translations.loader_text;
+                    
+                    // Redraw country combo
+                    $("select.location, select.country").html('<option></option>'); 
+                    ISO_COUNTRIES = jsonResponse.data.translations.iso_countries;
+
+                    $("select.location, select.country").select2({
+                        data: ISO_COUNTRIES,
+                        escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+                        templateResult: formatCountry,
+                        templateSelection: formatCountrySelection
+                    });
+                    // Set selected country in combo
+                    $('select#location').val(COUNTRY.toUpperCase()).trigger('change.select2');                     
+                    
+                    // Translate header text                
+                    $('header p.pmethods-label').html(jsonResponse.data.translations.header_methods);
+                    $('header label').html(jsonResponse.data.translations.header_location);
+                    $('header select').attr('placeholder', jsonResponse.data.translations.header_location_placeholder);
+                    $('header select').data('placeholder', jsonResponse.data.translations.header_location_placeholder);
+                    $('header select').data('empty', jsonResponse.data.translations.header_location_empty);
+                    $('header select').data('invalid', jsonResponse.data.translations.header_location_invalid);
+                    
+                    // Translate footer text
+                    $('footer p.help a').html(jsonResponse.data.translations.footer_help);
+                    $('footer p.help a').attr('title', jsonResponse.data.translations.footer_help_title);
+                    $('footer p.copyright').html(jsonResponse.data.translations.footer_copyright);
+                }
+                
+                if (!jQuery.isEmptyObject(jsonResponse.data.methods)) {
+                    // Show payment methods navigation
+                    $('p.pmethods-label, nav#pmethods').show();
+                    
+                    // Redraw OWL Carousel
+                    var owlContent = "";
+                    var owlItem = 0;
+                                    
+                    $.each(jsonResponse.data.methods, function(key, value) {
+                        owlContent +=  '<li>' +
+                                    '<a class="'+key+(key==jsonResponse.data.def.dm?' active':'')+'" data-html="'+key+'">' +
+                                    '<span class="icon" style="background-image: url(\'../img/payment-icons/'+key+'-icon.png\');"></span>' +
+                                    '<span class="label">'+value+'</span>' +
+                                    '</a>' +
+                                    '</li>';
+    
+                        if(key==jsonResponse.data.def.dm) OWL_SELECTED_ITEM = owlItem; 
+                        owlItem++;                           
+                    });          
+                           
+                    $('ul.pmethods-items').html(owlContent).promise().done(function() {
+                        OWL_MAX_ITEMS = COUNT_PAYMENT_METHODS > 10 ? 10 : COUNT_PAYMENT_METHODS;
+                        OWL_MAX_ITEMS_DESKTOP_SMALL = COUNT_PAYMENT_METHODS > 8 ? 8 : COUNT_PAYMENT_METHODS;
+                        OWL_MAX_ITEMS_TABLE = COUNT_PAYMENT_METHODS > 6 ? 6 : COUNT_PAYMENT_METHODS;
+                        OWL_MAX_ITEMS_TABLE_SMALL = COUNT_PAYMENT_METHODS > 5 ? 5 : COUNT_PAYMENT_METHODS;
+                        OWL_MAX_ITEMS_MOBILE = COUNT_PAYMENT_METHODS > 3 ? 3 : COUNT_PAYMENT_METHODS; 
+ 
+                        if (typeof OWL === 'undefined') {
+                            $('ul.pmethods-items').owlCarousel({     
+                                // Most important owl features
+                                items : OWL_MAX_ITEMS,
+                                itemsDesktop : [1199,OWL_MAX_ITEMS],
+                                itemsDesktopSmall : [980,OWL_MAX_ITEMS_DESKTOP_SMALL],
+                                itemsTablet: [768,OWL_MAX_ITEMS_TABLE],
+                                itemsTabletSmall: [640,OWL_MAX_ITEMS_TABLE_SMALL],
+                                itemsMobile : [479,OWL_MAX_ITEMS_MOBILE],
+                                // Navigation
+                                navigation : true,
+                                navigationText : [
+                                    "<span class='left-arrow-icon arrow-icon'></span>",
+                                    "<span class='right-arrow-icon arrow-icon'></span>"
+                                ]  
+                            });
+                            
+                            // Get OWL Carousel instance
+                            OWL = $('ul.pmethods-items').data('owlCarousel');
+                        }
+                        else {
+                            OWL.reinit({
+                                items : OWL_MAX_ITEMS,
+                                itemsDesktop : [1199,OWL_MAX_ITEMS],
+                                itemsDesktopSmall : [980,OWL_MAX_ITEMS_DESKTOP_SMALL],
+                                itemsTablet: [768,OWL_MAX_ITEMS_TABLE],
+                                itemsTabletSmall: [640,OWL_MAX_ITEMS_TABLE_SMALL],
+                                itemsMobile : [479,OWL_MAX_ITEMS_MOBILE]
+                            });
+                        }      
+                        OWL.goTo(OWL_SELECTED_ITEM);
+                    });
+                }
+                else {
+                    // Hide payment methods navigation
+                    $('p.pmethods-label, nav#pmethods').hide();
+                    $('ul.pmethods-items').html('');
+                }
+                
+                $('section#main').load(
+                    '../main.php', 
+                    form.serializeArray(), 
+                    function(responseTxt, statusTxt, xhr) {
+                        if(statusTxt == "success") {                            
+                            // Redraw country combo
+                            $("select.country").select2({
+                                minimumResultsForSearch: '10',
+                                data: ISO_COUNTRIES,
+                                escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+                                templateResult: formatCountry,
+                                templateSelection: formatCountrySelection
+                            });
+                            
+                            if (!jQuery.isEmptyObject(jsonResponse.data.astropay_type)) {
+                                var ASTROPAY_TYPE = [];
+                                $.each(jsonResponse.data.astropay_type, function(key, value) {
+                                    ASTROPAY_TYPE.push({id:value.code,text:value.name,logo:value.logo});
+                                }); 
+    
+                                $("select#astropay-type").select2({
+                                    minimumResultsForSearch: '10',
+                                    data: ASTROPAY_TYPE,
+                                    escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+                                    templateResult: formatAstropayType,
+                                    templateSelection: formatAstropayTypeSelection
+                                });
+                            }
+                            
+                           if (!jQuery.isEmptyObject(jsonResponse.data.payvalida_type)) {
+                                var PAYVALIDA_TYPE = [];
+                                $.each(jsonResponse.data.payvalida_type, function(key, value) {
+                                    PAYVALIDA_TYPE.push({id:value.code,text:value.name,logo:value.logo});
+                                }); 
+    
+                                $("select#payvalida-type").select2({
+                                    minimumResultsForSearch: '10',
+                                    data: PAYVALIDA_TYPE,
+                                    escapeMarkup: function (markup) { return markup; }, // let our custom formatter work
+                                    templateResult: formatPayvalidaType,
+                                    templateSelection: formatPayvalidaTypeSelection
+                                });
+                            }                            
+                            
+                            $('form#contact-form select').select2({
+                                minimumResultsForSearch: '10'
+                            });
+                            
+                            // Inputmask init
+                            $(".date").inputmask();
+                            
+                            // Reinit only-numbers class
+                            $(".only-numbers").on("keypress", function(e) {
+                                if ((e.which < 48 || e.which > 57) && (e.which !== 8) && (e.which !== 0)) {
+                                    return false;
+                                }
+                            
+                                return true;
+                            });
+                            
+                            $(document).foundation();
+                             
+                            // Load default payment method form 
+                            if (typeof CURRENT_PAYMENT_METHOD !== 'undefined' && CURRENT_PAYMENT_METHOD !== null && CURRENT_PAYMENT_METHOD != '') {
+                                $('div#'+CURRENT_PAYMENT_METHOD).fadeIn('slow');
+                            }
+                            
+                            // Set country phone code in SEPA and QIWI form
+                            $("input#sepa-phonecode, input#qiwi-phonecode").val('+'+COUNTRY_PHONE_CODE[COUNTRY.toUpperCase()]);
+                        }
+                        if(statusTxt == "error") {
+                            alert("Error: " + xhr.status + ": " + xhr.statusText);
+                        }
+                        // Hide PRELOADER
+                        $('body').prelodr('out'); 
+                    }
+                );
+            }      
+        },"json");  
+    });
+
+    // *******************************************************************
+    // Payment methods navigation - OWL Carousel
+    // *******************************************************************
+    if (typeof COUNT_PAYMENT_METHODS !== 'undefined' && COUNT_PAYMENT_METHODS != 0) {  
+        var OWL_MAX_ITEMS = COUNT_PAYMENT_METHODS > 10 ? 10 : COUNT_PAYMENT_METHODS;
+        var OWL_MAX_ITEMS_DESKTOP_SMALL = COUNT_PAYMENT_METHODS > 8 ? 8 : COUNT_PAYMENT_METHODS;
+        var OWL_MAX_ITEMS_TABLE = COUNT_PAYMENT_METHODS > 6 ? 6 : COUNT_PAYMENT_METHODS;
+        var OWL_MAX_ITEMS_TABLE_SMALL = COUNT_PAYMENT_METHODS > 5 ? 5 : COUNT_PAYMENT_METHODS;
+        var OWL_MAX_ITEMS_MOBILE = COUNT_PAYMENT_METHODS > 3 ? 3 : COUNT_PAYMENT_METHODS;     
+        
+        $('ul.pmethods-items').owlCarousel({     
+            // Most important owl features
+            items : OWL_MAX_ITEMS,
+            itemsDesktop : [1199,OWL_MAX_ITEMS],
+            itemsDesktopSmall : [980,OWL_MAX_ITEMS_DESKTOP_SMALL],
+            itemsTablet: [768,OWL_MAX_ITEMS_TABLE],
+            itemsTabletSmall: [640,OWL_MAX_ITEMS_TABLE_SMALL],
+            itemsMobile : [479,OWL_MAX_ITEMS_MOBILE],
+            // Navigation
+            navigation : true,
+            navigationText : [
+                "<span class='left-arrow-icon arrow-icon'></span>",
+                "<span class='right-arrow-icon arrow-icon'></span>"
+            ]  
+        });
+        
+        // Get OWL Carousel instance
+        var OWL = $('ul.pmethods-items').data('owlCarousel');
+        OWL.goTo(OWL_SELECTED_ITEM);
+    
+        $('nav#pmethods').show();
+    }
+
+    $(document).on('click', '.owl-item', function(e) {
+        var $this = $(this);
+        
+        if ($this.find('li a').hasClass('active')) {
+            e.preventDefault();
+        }
+        else {
+            // LOOP stop it!
+            clearInterval(RECURSIVE_INTERVAL_ID);
+            RECURSIVE_TIMEOUT = 1;
+         
+            // Remove input error class
+            removeFormErrors($('form#tpv-form, form#contact-form'));
+            $('div#code-callback > div, div#form-callback > div, div#contact-callback > div').attr('class','').html('');  
+                 
+            var payMethodType = $this.find('li a').data('html');
+            var payMethodLabel = $this.find('li a span.label').html();
+    
+            // Set active class
+            $('.owl-item li a').removeClass('active');
+            $this.find('li a').addClass('active');
+            
+            // Form reset
+            $('form#tpv-form, form#contact-form').reset();
+            
+            // Reset tpv and coupon containers
+            cleanTPVandCoupon();
+            // Reset select2 value
+            $("form#tpv-form select.country").val('').trigger('change.select2');
+            
+            // Set new payment method in tpv form
+            $('form#tpv-form input[name="payment-method-type"]').val(payMethodType);
+            
+            // Reset access code value
+            $('form#tpv-form input#code-0').val('');
+        
+            // Show selected payment method form
+            $('div.payment-form').hide();
+            $('div#'+payMethodType).fadeIn('slow');
+    
+            // Change payment method form title
+            $('img.form-data-icon').attr({
+                'src': 'img/payment-icons/'+payMethodType+'-icon-big.png',
+                'alt': payMethodType
+            });
+            $('span.form-data-title').html(payMethodLabel);
+            
+            // Set country phone code in SEPA and QIWI form
+            $("input#sepa-phonecode, input#qiwi-phonecode").val('+'+COUNTRY_PHONE_CODE[COUNTRY.toUpperCase()]);
+                
+            $('a.toggle-access-code').html('<i class="fa fa-angle-right" aria-hidden="true"></i> '+$('a.toggle-access-code').data('show'));
+            $('div.access-code-link').removeClass('hide').show();
+
+            $('div.access-code-container, div.form-contact-container').hide();
+            $('div.form-data-container').show();
+        }
+    });
+    
+    // *******************************************************************
+    // Access code toggle
+    // *******************************************************************   
+    $(document).on('click', 'a.toggle-access-code', function(e) {
+        removeFormErrors($('form#tpv-form, form#contact-form'));
+        $('div#code-callback > div, div#form-callback > div, div#contact-callback > div').attr('class','').html('');  
+            
+        // Reset tpv and coupon containers
+        cleanTPVandCoupon();
+        // Reset select2 value
+        $('form#tpv-form select.country').val('').trigger('change.select2');
+        // Reset access code value
+        $('form#tpv-form input#code-0').attr('value', '');
+            
+        if($('div.access-code-container').is(':visible')) {
+            $('div.access-code-container').fadeOut('fast', function() {
+                $('a.toggle-access-code').html('<i class="fa fa-angle-right" aria-hidden="true"></i> '+$('a.toggle-access-code').data('show'));
+                $('div.form-data-container, div.methods-unavailable').fadeIn('slow');    
+            });           
+        }
+        else {            
+            $('div.form-data-container, div.methods-unavailable').fadeOut('fast', function() {
+                $('a.toggle-access-code').html('<i class="fa fa-angle-left" aria-hidden="true"></i> '+$('a.toggle-access-code').data('hide'));
+                $('div.access-code-container').fadeIn('slow');    
+            }); 
+        }
+        
+        e.preventDefault();
+    });
+    
+    // *******************************************************************
+    // Check TPV/iframe
+    // *******************************************************************    
+    $(document).on('click', 'button.check-tpv', function(e) {
+        // Prevent form submit
+        e.preventDefault(); 
+        
+        // Start loader
+        var button = $(this);
+        button.addClass('spinner-loader').html(button.data('loader')).prop('disabled', true);
+        
+        var form = button.parents('form:first');
+        var extraParams = {
+            uid: $('form#data-form input[name="uid"]').val(),
+            mid: $('form#data-form input[name="mid"]').val(),
+            lang: $('form#data-form input[name="lang"]').val(),
+            price: $('form#data-form input[name="price"]').val(),
+            currency: $('form#data-form input[name="currency"]').val(),
+            ucode: $('form#data-form input[name="ucode"]').val(),
+            country: $('select#location').val(),
+            rec: $('form#data-form input[name="rec"]').val()
+        };
+        
+        $.post(form.attr('action'), form.find('input[type="hidden"], input:visible, select:visible').serialize() + '&' + $.param(extraParams)
+, function(jsonResponse) {   
+            // Remove input error class
+            removeFormErrors(form);
+            $('div#code-callback > div, div#form-callback > div').attr('class','').html(''); 
+
+            if (jsonResponse.status==0) {
+                if (!jQuery.isEmptyObject(jsonResponse.error)) {
+                    $.each(jsonResponse.error, function(key, value) {
+                        $('input#'+key+':visible', form)
+                            .val('')
+                            .addClass('error')
+                            .after('<span class="error"><i class="fa fa-close"></i> '+$('input#'+key+':visible', form).attr(value)+'</span>');
+                            
+                        $('select#'+key+':visible', form)
+                            .next()
+                            .addClass('select-error')
+                            .after('<span class="error"><i class="fa fa-close"></i> '+$('select#'+key+':visible', form).attr(value)+'</span>');            
+                    });
+                }
+                
+                // Set ERROR msg
+                $('div#form-callback > div').attr('class','callout alert').html(jsonResponse.message); 
+                
+                // ScrollTo element
+                $('html, body').animate({
+                    scrollTop: parseInt($("div.form-data-container").offset().top - 100)
+                }, 1000);               
+            }
+            else if (jsonResponse.status==1) {                
+                if(PAYMENT_METHODS[jsonResponse.data.payment_method]['targetload'] == 1) {
+                    if ( top !== self ) { // we are in the iframe
+                        //Parent redirection
+                        window.top.location.href = jsonResponse.data.url;
+                    } 
+                    else { // not an iframe
+                        //Self redirection
+                        window.location.href = jsonResponse.data.url;
+                    }
+                }
+                else if(PAYMENT_METHODS[jsonResponse.data.payment_method]['targetload'] == 2) {
+                    // Load TPV/iframe with overlay
+                    $('div.tpv-overlay').show().delay(4000).hide(1);
+                    var ifrmID = 'tpv';
+                    var ifrmSrc = jsonResponse.data.url;
+                    
+                    if(jsonResponse.data.payment_method == 'sofort') {
+                        if($(window).width()<=320) { var ifrmHeight = 1500; }
+                        else if($(window).width()<=360) { var ifrmHeight = 1250; }
+                        else if($(window).width()<=480) { var ifrmHeight = 1000; }
+                        else if($(window).width()<=640) { var ifrmHeight = 1250; }             
+                        else if($(window).width()<=800) { var ifrmHeight = 1050; }
+                        else { var ifrmHeight = jsonResponse.data.height; }
+                    }
+                    else if(jsonResponse.data.payment_method == 'safetypay') {        
+                        if($(window).width()<=1000) { var ifrmHeight = 1100; }
+                        else { var ifrmHeight = jsonResponse.data.height; }
+                    }
+                    else if(jsonResponse.data.payment_method == 'fortumo') {
+                        if($(window).width()<=320) { var ifrmHeight = 650; }
+                        else { var ifrmHeight = jsonResponse.data.height; }
+                    }
+                    else if(jsonResponse.data.payment_method == 'eps') {
+                        if($(window).width()<=640) { var ifrmHeight = 1050; }
+                        else { var ifrmHeight = jsonResponse.data.height; }
+                    }
+                    else if(jsonResponse.data.payment_method == 'verkkopankki') {
+                        if($(window).width()<=640) { var ifrmHeight = 1550; }
+                        else { var ifrmHeight = jsonResponse.data.height; }
+                    }
+                    else {
+                        var ifrmHeight = jsonResponse.data.height;
+                    }
+                    
+                    iframeResizer(ifrmID,ifrmHeight,ifrmSrc,'show');
+                    
+                    if(jsonResponse.data.payment_method == 'voguepay' || jsonResponse.data.payment_method == 'brpaycard' || jsonResponse.data.payment_method == 'brpaybank' || jsonResponse.data.payment_method == 'brpay') {
+                        // force hide overlay
+                        $('div.tpv-overlay').hide();
+                    }
+                                              
+                    // ScrollTo element
+                    $('html, body').animate({
+                        scrollTop: parseInt($("iframe#tpv").offset().top - 215)
+                    }, 1000);
+                                         
+                    if(jsonResponse.data.payment_method != 'paysafecash') {                   
+                        // Start recursive 8 seconds code check function
+                        RECURSIVE_INTERVAL_ID = setInterval( function() { 
+                            checkAccessCodeStatus(jsonResponse.data); 
+                        }
+                        ,8000);
+                    }    
+                }             
+                else if(PAYMENT_METHODS[jsonResponse.data.payment_method]['targetload'] == 3) {                    
+                    var methodContainer;
+                    if(jsonResponse.data.payment_method == 'payvalida') methodContainer = 'instructions';
+                    if(jsonResponse.data.payment_method == 'wu' || jsonResponse.data.payment_method == 'bank') methodContainer = 'coupon'; 
+                       
+                    $('div#'+methodContainer).load(
+                        (jsonResponse.data.url).replace(/ /g, "%20"), 
+                        function(responseTxt, statusTxt, xhr) {
+                            if(statusTxt == "success") {
+                                $('div.'+methodContainer+'-container').show();
+                                
+                                // ScrollTo element
+                                $('html, body').animate({
+                                    scrollTop: parseInt($('div.'+methodContainer+'-container').offset().top - 100)
+                                }, 1000);
+                            }
+                            if(statusTxt == "error") {
+                                // Set ERROR msg
+                                $('div#form-callback > div').attr('class','callout alert').html("Error: " + xhr.status + ": " + xhr.statusText);
+                                
+                                // ScrollTo element
+                                $('html, body').animate({
+                                    scrollTop: parseInt($("div.form-data-container").offset().top - 100)
+                                }, 1000);  
+                            }
+                        }
+                    );                                 
+                }
+            }
+            
+            // Stop loader
+            button.removeClass('spinner-loader').html(button.data('label')).prop('disabled', false);     
+        },"json");         
+    });
+
+    // *******************************************************************
+    // Check Access
+    // *******************************************************************    
+    $(document).on('click', 'button.check-access', function(e) {
+        // Prevent form submit
+        e.preventDefault(); 
+        
+        // Start loader
+        var button = $(this);
+        button.addClass('spinner-loader').html(button.data('loader')).prop('disabled', true);
+        
+        var form = button.parents('form:first');
+        var extraParams = {
+            code_access: 1,
+            uid: $('form#data-form input[name="uid"]').val(),
+            mid: $('form#data-form input[name="mid"]').val(),
+            lang: $('form#data-form input[name="lang"]').val(),
+            price: $('form#data-form input[name="price"]').val(),
+            country: $('select#location').val()
+        };
+        
+        $.post(form.attr('action'), form.find('input[type="hidden"], input:visible').serialize() + '&' + $.param(extraParams)
+, function(jsonResponse) {   
+            // Remove input error class
+            removeFormErrors(form); 
+                
+            if (jsonResponse.status==0) {
+                if (!jQuery.isEmptyObject(jsonResponse.error)) {
+                    $.each(jsonResponse.error, function(key, value) {
+                        $('input#'+key+':visible', form)
+                            .val('')
+                            .addClass('error')
+                            .after('<span class="error"><i class="fa fa-close"></i> '+$('input#'+key+':visible', form).attr(value)+'</span>');            
+                    });
+                }
+                
+                // Set ERROR msg
+                $('div#code-callback > div').attr('class','callout alert').html(jsonResponse.message); 
+                
+                // ScrollTo element
+                $('html, body').animate({
+                    scrollTop: parseInt($("div.form-data-container").offset().top - 100)
+                }, 1000);               
+            }
+            else if (jsonResponse.status==1) {
+                //Redirection
+                //window.location.href = jsonResponse.data.url;
+                window.parent.location.href = jsonResponse.data.url;
+            }
+            
+            // Stop loader
+            button.removeClass('spinner-loader').html(button.data('label')).prop('disabled', false);      
+        },"json");         
+    });
+           
+    // *******************************************************************
+    // Contact/Help link
+    // *******************************************************************   
+    $(document).on('click', 'a#help', function(e) {
+        if($('div.access-code-container, div.form-data-container, div.methods-unavailable, iframe#tpv, div.coupon-container, div.instructions-container').is(':visible')) {
+            // Reset tpv and coupon containers
+            cleanTPVandCoupon();
+            
+            $('div.access-code-link, div.access-code-container, div.form-data-container, div.methods-unavailable').fadeOut('fast', function() {
+                $('div.form-contact-container').fadeIn('slow');    
+            });
+            
+                // ScrollTo element
+                $('html, body').animate({
+                    scrollTop: parseInt($("div.form-contact-container").offset().top - 50)
+                }, 1000);           
+        }
+        
+        e.preventDefault();
+    });    
+    
+    // *******************************************************************
+    // Close Contact/Help form
+    // *******************************************************************     
+    $(document).on('click', 'a.form-contact-back', function(e) {
+        $(this).parent().parent().fadeOut('fast', function() {
+            $('a.toggle-access-code').html('<i class="fa fa-angle-right" aria-hidden="true"></i> '+$('a.toggle-access-code').data('show'));
+            $('div.access-code-link, div.form-data-container, div.methods-unavailable').fadeIn('slow');    
+        });
+        
+        e.preventDefault();                 
+    });
+    
+    // *******************************************************************
+    // Contact form
+    // *******************************************************************    
+    $(document).on('click', 'button.contact', function(e) {
+        // Prevent form submit
+        e.preventDefault(); 
+        
+        // Start loader
+        var button = $(this);
+        button.addClass('spinner-loader').html(button.data('loader')).prop('disabled', true);
+        
+        var form = button.parents('form:first');
+        var extraParams = {
+            uid: $('form#data-form input[name="uid"]').val(),
+            mid: $('form#data-form input[name="mid"]').val(),
+            payment_method_type: $('form#tpv-form input[name="payment-method-type"]').val(),
+            lang: $('form#data-form input[name="lang"]').val(),
+            price: $('form#data-form input[name="price"]').val(),
+            country: $('select#location').val(),
+            store_name: $('form#data-form input[name="title"]').val(),
+            product_name: $('form#data-form input[name="name"]').val(),
+            product_description: $('form#data-form input[name="description"]').val(),
+            product_code: $('form#data-form input[name="ucode"]').val(),
+            store_email: $('form#data-form input[name="email"]').val()
+        };
+        
+        $.post(form.attr('action'), form.find('input[type="hidden"], input:visible, textarea:visible, select:visible').serialize() + '&' + $.param(extraParams)
+, function(jsonResponse) {   
+            // Remove input error class
+            removeFormErrors(form);
+            $('div#contact-callback > div').attr('class','').html('');  
+                
+            if (jsonResponse.status==0) {
+                if (!jQuery.isEmptyObject(jsonResponse.error)) {
+                    $.each(jsonResponse.error, function(key, value) {
+                        $('input#'+key+':visible, textarea#'+key+':visible', form)
+                            .val('')
+                            .addClass('error')
+                            .after('<span class="error"><i class="fa fa-close"></i> '+$('input#'+key+':visible, textarea#'+key+':visible', form).attr(value)+'</span>');
+                            
+                        $('select#'+key+':visible', form)
+                            .next()
+                            .addClass('select-error')
+                            .after('<span class="error"><i class="fa fa-close"></i> '+$('select#'+key+':visible', form).attr(value)+'</span>');            
+                    });
+                }
+                
+                // Set ERROR msg
+                $('div#contact-callback > div').attr('class','callout alert').html(jsonResponse.message);           
+            }
+            else if (jsonResponse.status==1) {
+                // Set SUCCESS msg
+                $('div#contact-callback > div').attr('class','callout success').html(jsonResponse.message).show().delay(4000).hide(1);
+                
+                // Form reset
+                form.reset();
+                $('select#contact-subject, select#contact-method').val('0').trigger('change.select2');
+            }
+            
+            // ScrollTo element
+            $('html, body').animate({
+                scrollTop: parseInt($("form#contact-form").offset().top - 170)
+            }, 1000);
+                
+            // Stop loader
+            button.removeClass('spinner-loader').html(button.data('label')).prop('disabled', false);     
+        },"json");         
+    });
+    
+    $('body').on('change', 'select#contact-subject', function(e) {
+        $('div#contact-method-container, div#contact-code-container').hide();
+        selectedItem = $(this).val();
+        
+        if(selectedItem=='1' || selectedItem=='3') $('div#contact-method-container').show();
+        else if(selectedItem=='2' || selectedItem=='4' || selectedItem=='5') $('div#contact-code-container').show();
+    });
+    
+    // *******************************************************************
+    // Download/Print coupon
+    // *******************************************************************    
+    $(document).on('click', 'button.print', function(e) {
+        // Prevent form submit
+        e.preventDefault();     
+        
+        var canvasDiv = $(".coupon")[0];
+        var rect = canvasDiv.getBoundingClientRect();
+
+        var canvas = document.createElement("canvas");
+        canvas.width = (rect.width)+10;
+        canvas.height = rect.height;
+
+        var ctx = canvas.getContext("2d");
+        ctx.translate(-rect.left,-rect.top);
+
+        html2canvas(canvasDiv, {
+            canvas:canvas,
+            height:rect.height,
+            width:rect.width,
+            onrendered: function(canvas) {
+                var imgData = canvas.toDataURL('image/png', 1.0);              
+                var doc = new jsPDF('p', 'mm');
+                doc.addImage(imgData, 'PNG', 10, 10);
+                doc.save('WU-coupon_e-Payouts.pdf');
+            }
+        });
+    });
+});
+// *********************************************************************** 
+// END Document load events
+// ***********************************************************************  
+
+// *********************************************************************** 
+// Init Foundation
+// *********************************************************************** 
+$(document).foundation();
+
+// *********************************************************************** 
+// Init PRELOADER
+// ***********************************************************************
+$('body').prelodr();
+
+// *********************************************************************** 
+// Sticky NAV
+// ***********************************************************************
+$(window).scroll(function () {
+    if($('nav#pmethods').is(':visible')) {
+        if ($(document).scrollTop() > 70) {
+            $('nav#pmethods').addClass(SHRINK);
+            $('section#main').addClass(SHRINK);
+        } 
+        else {
+            $('nav#pmethods').removeClass(SHRINK);
+            $('section#main').removeClass(SHRINK);
+        }
+    }
+});
+
+// *********************************************************************** 
+// Select2 formated
+// *********************************************************************** 
+function formatCountry(country) {
+    if (!country.id) { return country.text; }
+    var $country = $(
+        '<span>' + 
+        '<span class="flag flag-' + country.id.toLowerCase() + '"></span> ' +
+        '<span class="flag-label">' + country.text + '</span> ' +
+        '</span>'
+    );
+    
+    return $country;
+};
+
+function formatCountrySelection(selection) {
+    if (!selection.id) { return selection.text; }
+    var $selection = $(
+        '<span>' + 
+        '<span class="flag flag-' + selection.id.toLowerCase() + '"></span> ' +
+        '<span class="flag-label">' + selection.text + '</span> ' +
+        '</span>'        
+    );        
+
+    return $selection;
+};
+
+function formatAstropayType(type) {
+    if (!type.id) { return type.text; }
+    var $type = $(
+        '<span>' + 
+        '<span class="icon"><img src="' + type.logo + '" /></span> ' +
+        '<span class="icon-label">' + type.text + '</span> ' +
+        '</span>'
+    );
+    
+    return $type;
+};
+
+function formatAstropayTypeSelection(selection) {
+    if (!selection.id) { return selection.text; }
+    var $selection = $(
+        '<span>' + 
+        '<span class="icon"><img src="' + selection.logo + '" /></span> ' +
+        '<span class="icon-label">' + selection.text + '</span> ' +
+        '</span>'        
+    );        
+
+    return $selection;
+};
+
+function formatPayvalidaType(type) {
+    if (!type.id) { return type.text; }
+    var $type = $(
+        '<span>' + 
+        '<span class="icon"><img src="' + type.logo + '" /></span> ' +
+        '<span class="icon-label">' + type.text + '</span> ' +
+        '</span>'
+    );
+    
+    return $type;
+};
+
+function formatPayvalidaTypeSelection(selection) {
+    if (!selection.id) { return selection.text; }
+    var $selection = $(
+        '<span>' + 
+        '<span class="icon"><img src="' + selection.logo + '" /></span> ' +
+        '<span class="icon-label">' + selection.text + '</span> ' +
+        '</span>'        
+    );        
+
+    return $selection;
+};
+
+
+// *********************************************************************** 
+// Iframe resize
+// *********************************************************************** 
+function iframeResizer(ifrmID,ifrmHeight,ifrmSrc,visibility) {
+    if(visibility=='show') {
+        $('iframe#'+ifrmID).attr({
+            'src'   : ifrmSrc,
+            'height': ifrmHeight
+        }).css({ 
+            'height': ifrmHeight + 'px' 
+        }).parent().parent().show();
+    }
+    else if(visibility=='hide') {
+         $('iframe#'+ifrmID).attr({
+            'src'   : ifrmSrc,
+            'height': ifrmHeight
+        }).css({ 
+            'height': ifrmHeight + 'px' 
+        }).parent().parent().hide();       
+    } 
+}
+
+// *********************************************************************** 
+//  Cross origin comunication
+// ***********************************************************************
+function handleMessage(event) {
+    var accepted_origin = 'https://paymentbox.e-payouts.com';
+    if (event.origin == accepted_origin){
+        if (event.data['task'] == 'scroll_top') {
+           if($(window).width()<=480) window.scrollTo(0,450);
+           else window.scrollTo(0,500);
+        }
+        if (event.data['task'] == 'resize') {
+            document.getElementById("tpv").height = "900";
+            document.getElementById("tpv").style.height = "900px";
+        }
+        // can add more tasks
+    } 
+    else{
+        console.error('Unknown origin', event.origin);
+    }
+}
+
+window.onload = function() {
+    window.addEventListener("message", handleMessage, false);
+};
+
+// *********************************************************************** 
+// Form reset
+// *********************************************************************** 
+$.fn.extend({reset: function() {
+    return this.each(function() 
+    {
+        $(this).is('form') && this.reset();
+    });
+}});
+
+// *********************************************************************** 
+// Clean TPV iframe and payment coupon containers
+// *********************************************************************** 
+function cleanTPVandCoupon() {
+    // Reset iframe
+    iframeResizer('tpv',0,'','hide');
+    
+    // Reset payment coupon
+    $('div.coupon-container, div.instructions-container').hide();
+    $('div#coupon, div#instructions').html('');    
+}
+
+// *********************************************************************** 
+// Form errors remove
+// *********************************************************************** 
+function removeFormErrors(form) {
+    // Remove input and textarea error class
+    $('input.error, textarea.error', form).removeClass('error');
+    // Remove select2 error class
+    $('span.select-error', form).removeClass('select-error');                                    
+    // Remove input FILE error class
+    $('input[type="file"]', form).removeClass('alert').addClass('secondary'); 
+    
+    // Remove error span
+    $('span.error', form).remove();
+}
+
+// *********************************************************************** 
+// CSS3 loader
+// *********************************************************************** 
+$.fn.css3Loader = function() {
+    this.prepend(
+        '<div id="floatingCirclesG">'+
+        '<div class="f_circleG" id="frotateG_01"></div>'+
+        '<div class="f_circleG" id="frotateG_02"></div>'+
+        '<div class="f_circleG" id="frotateG_03"></div>'+
+        '<div class="f_circleG" id="frotateG_04"></div>'+
+        '<div class="f_circleG" id="frotateG_05"></div>'+
+        '<div class="f_circleG" id="frotateG_06"></div>'+
+        '<div class="f_circleG" id="frotateG_07"></div>'+
+        '<div class="f_circleG" id="frotateG_08"></div>'+
+        '</div>');
+    
+};
+ 
+$.fn.hidePreLoader = function() {
+    // Hide CSS3 preloader code.
+    this.html('');
+};
+
+// *********************************************************************** 
+// Check valid URL
+// *********************************************************************** 
+$.UrlExists = function(url) {
+    var http = new XMLHttpRequest();
+    http.open('HEAD', url, false);
+    http.send();
+    return http.status!=404;
+};
+
+// *********************************************************************** 
+// Check Access Code Status
+// *********************************************************************** 
+function checkAccessCodeStatus(paramsObject) {
+    $.post('inc/checkcode.inc.php', {uid:paramsObject.uid, mid:paramsObject.mid, country:paramsObject.country, type:paramsObject.payment_method, code: paramsObject.code, lang:paramsObject.lang, timeout:RECURSIVE_TIMEOUT}, function(jsonResponse) {
+        if (jsonResponse.status==1 || jsonResponse.status==2 || jsonResponse.status==3) {
+            // LOOP stop it!
+            clearInterval(RECURSIVE_INTERVAL_ID);
+            RECURSIVE_TIMEOUT = 1;
+            // Reset iframe
+            iframeResizer('tpv',0,'','hide');'300';
+            
+            if(jsonResponse.status==1) {
+                // Set Access Code value
+                $('form#tpv-form input#code-0').val(paramsObject.code);
+                
+                // Set SUCCESS msg
+                $('div#code-callback > div').attr('class','callout success').html(jsonResponse.message).show().delay(8000).hide(1);
+                           
+                // Hide form
+                $('div.form-data-container').fadeOut('fast', function() {
+                    $('a.toggle-access-code').html('<i class="fa fa-angle-left" aria-hidden="true"></i> '+$('a.toggle-access-code').data('hide'));
+                    $('div.access-code-container').fadeIn('slow');    
+                });             
+            }
+            else if(jsonResponse.status==2 || jsonResponse.status==3) {
+                // Set ERROR msg
+                $('div#form-callback > div').attr('class','callout alert').html(jsonResponse.message); 
+            }
+            
+            // ScrollTo element
+            $('html, body').animate({
+                scrollTop: parseInt($("div.form-data-container").offset().top - 100)
+            }, 1000);  
+        }
+        
+        RECURSIVE_TIMEOUT = RECURSIVE_TIMEOUT+8000;
+    },"json");              
+}
+// *********************************************************************** 
+// Card number input formatter
+// ***********************************************************************
+$(".card-number").on("keydown", function(e) {
+    var cursor = this.selectionStart;
+    if (this.selectionEnd != cursor) return;
+    if (e.which == 46) {
+        if (this.value[cursor] == " ") this.selectionStart++;
+    } else if (e.which == 8) {
+        if (cursor && this.value[cursor - 1] == " ") this.selectionEnd--;
+    }
+}).on("input", function() {
+    var value = this.value;
+    var cursor = this.selectionStart;
+    var matches = value.substring(0, cursor).match(/[^0-9]/g);
+    if (matches) cursor -= matches.length;
+    value = value.replace(/[^0-9]/g, "").substring(0, 16);
+    var formatted = "";
+    for (var i=0, n=value.length; i<n; i++) {
+        if (i && i % 4 == 0) {
+            if (formatted.length <= cursor) cursor++;
+            formatted += " ";
+        }
+        formatted += value[i];
+    }
+    if (formatted == this.value) return;
+    this.value = formatted;
+    this.selectionEnd = cursor;
+});
+// *********************************************************************** 
+//  Number input formatter
+// ***********************************************************************
+$(".only-numbers").on("keypress", function(e) {
+    if ((e.which < 48 || e.which > 57) && (e.which !== 8) && (e.which !== 0)) {
+        return false;
+    }
+
+    return true;
+});
+
+// *********************************************************************** 
+//  Country phone code
+// ***********************************************************************
+var COUNTRY_PHONE_CODE={BD:"880",BE:"32",BF:"226",BG:"359",BA:"387",BB:"1",WF:"681",BL:"590",BM:"1",BN:"673",BO:"591",BH:"973",BI:"257",BJ:"229",BT:"975",JM:"1",BW:"267",WS:"685",BQ:"599",BR:"55",BS:"1",JE:"44",BY:"375",BZ:"501",RU:"7",RW:"250",RS:"381",TL:"670",RE:"262",TM:"993",TJ:"992",RO:"40",TK:"690",GW:"245",GU:"1",GT:"502",GR:"30",GQ:"240",GP:"590",JP:"81",GY:"592",GG:"44",GF:"594",GE:"995",GD:"1",GB:"44",GA:"241",SV:"503",GN:"224",GM:"220",GL:"299",GI:"350",GH:"233",OM:"968",TN:"216",JO:"962",HR:"385",HT:"509",HU:"36",HK:"852",HN:"504",VE:"58",PR:"1",PS:"970",PW:"680",PT:"351",SJ:"47",PY:"595",IQ:"964",PA:"507",PF:"689",PG:"675",PE:"51",PK:"92",PH:"63",PN:"870",PL:"48",PM:"508",ZM:"260",EH:"212",EE:"372",EG:"20",ZA:"27",EC:"593",IT:"39",VN:"84",SB:"677",ET:"251",SO:"252",ZW:"263",SA:"966",ES:"34",ER:"291",ME:"382",MD:"373",MG:"261",MF:"590",MA:"212",MC:"377",UZ:"998",MM:"95",ML:"223",MO:"853",MN:"976",MH:"692",MK:"389",MU:"230",MT:"356",MW:"265",MV:"960",MQ:"596",MP:"1",MS:"1",MR:"222",IM:"44",UG:"256",TZ:"255",MY:"60",MX:"52",IL:"972",FR:"33",IO:"246",SH:"290",FI:"358",FJ:"679",FK:"500",FM:"691",FO:"298",NI:"505",NL:"31",NO:"47",NA:"264",VU:"678",NC:"687",NE:"227",NF:"672",NG:"234",NZ:"64",NP:"977",NR:"674",NU:"683",CK:"682",CI:"225",CH:"41",CO:"57",CN:"86",CM:"237",CL:"56",CC:"61",CA:"1",CG:"242",CF:"236",CD:"243",CZ:"420",CY:"357",CX:"61",CR:"506",CW:"599",CV:"238",CU:"53",SZ:"268",SY:"963",SX:"599",KG:"996",KE:"254",SS:"211",SR:"597",KI:"686",KH:"855",KN:"1",KM:"269",ST:"239",SK:"421",KR:"82",SI:"386",KP:"850",KW:"965",SN:"221",SM:"378",SL:"232",SC:"248",KZ:"7",KY:"1",SG:"65",SE:"46",SD:"249",DO:"1",DM:"1",DJ:"253",DK:"45",VG:"1",DE:"49",YE:"967",DZ:"213",US:"1",UY:"598",YT:"262",UM:"1",LB:"961",LC:"1",LA:"856",TV:"688",TW:"886",TT:"1",TR:"90",LK:"94",LI:"423",LV:"371",TO:"676",LT:"370",LU:"352",LR:"231",LS:"266",TH:"66",TG:"228",TD:"235",TC:"1",LY:"218",VA:"379",VC:"1",AE:"971",AD:"376",AG:"1",AF:"93",AI:"1",VI:"1",IS:"354",IR:"98",AM:"374",AL:"355",AO:"244",AS:"1",AR:"54",AU:"61",AT:"43",AW:"297",IN:"91",AX:"358",AZ:"994",IE:"353",ID:"62",UA:"380",QA:"974",MZ:"258"};

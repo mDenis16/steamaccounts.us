@@ -1,0 +1,109 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Register page";
+    ViewBag.logged = false;
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        csgo.usersManager.userData account = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if (account != null)
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+        }
+    }
+}
+
+@model csgo.postModels.Register
+<div style="height: 100vh">
+    <div class="flex-center flex-lg-column">
+        <div class="col-lg-4 col-md-8 mx-auto">
+
+
+            <!-- form card login -->
+            <div class="card rounded shadow shadow-sm" id="page">
+                <h5 class="card-header info-color white-text text-center py-4 elegant-color">Register</h5>
+                <div class="card-body">
+                    @using ( Html.BeginForm( "register", "register", FormMethod.Post, new { @class = "form", @role = "from", @id = "regForm" } ) )
+                    {
+
+                        @Html.AntiForgeryToken( )
+
+
+                        <div class="md-form">
+
+                            <i class="fas fa-user prefix"></i>
+                            @Html.TextBoxFor( m => m.username, new { @type = "text", @id = "username", @class = "form-control" } )
+                            <label for="username" class="">Username</label>
+
+                        </div>
+                        <div class="md-form">
+
+                            <i class="fas fa-user prefix"></i>
+                            @Html.TextBoxFor( m => m.email, new { @type = "email", @id = "email", @class = "form-control" } )
+                            <label for="email" class="">Email</label>
+
+                        </div>
+                        <div class="md-form">
+
+                            <i class="fas fa-key prefix"></i>
+
+                            @Html.PasswordFor( m => m.password, new { @type = "password", @name = "password", @id = "password", @class = "form-control" } )
+                            <label for="password" class="">Password</label>
+
+                        </div>
+                        <div class="md-form">
+
+                            <i class="fas fa-key prefix"></i>
+
+                            <input class="form-control" data-val="true" data-val-required="The password field is required." id="repassword" name="password" type="password">
+                            <label for="repassword" class="">Confirm Password</label>
+
+                        </div>
+                        <button class="btn btn-rounded btn-block my-4 waves-effect z-depth-0 elegant-color" type="submit" id="submitBtn">Add account</button>
+
+                    }
+                </div>
+                    <!--/card-block-->
+            </div>
+            <!-- /form card login -->
+
+        </div>
+    </div>
+</div>
+<script>
+
+    function isValidEmailAddress(emailAddress) {
+        var pattern = new RegExp(/^(("[\w-+\s]+")|([\w-+]+(?:\.[\w-+]+)*)|("[\w-+\s]+")([\w-+]+(?:\.[\w-+]+)*))(@@((?:[\w-+]+\.)*\w[\w-+]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@@\[?((25[0-5]\.|2[0-4][\d]\.|1[\d]{2}\.|[\d]{1,2}\.))((25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\.){2}(25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\]?$)/i);
+        return pattern.test(emailAddress);
+    };
+    $(document).ready(function () {
+        $("#submitBtn").click(function (event) {
+            event.preventDefault();
+            if (!$("#username").val()) {
+                toastr.error('Username can`t be empty.'); event.preventDefault();
+                return;
+            }
+            if (!isValidEmailAddress($("#email").val())) {
+                toastr.error('You email is invalid.'); event.preventDefault();
+                return;
+            }
+            if (!$("#password").val()) {
+                toastr.error('Password can`t be empty.'); event.preventDefault();
+                return;
+            }
+           
+            if ($("#password").val() != $("#repassword").val()) {
+              
+                toastr.error('Password doesn`t match');
+                return;
+            }
+          
+            setTimeout(() => {
+                $('#page').animate({ opacity: 0 }, 400, function () {
+                    $('#regForm').submit();
+                });
+            }, 300);
+        });
+    });
+
+</script>

@@ -1,0 +1,242 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+@{
+    ViewBag.logged = false;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        csgo.usersManager.userData account = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if ( account != null )
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+        }
+    }
+
+    <!-- Intro Section -->
+    <div class="view jarallax" data-jarallax='{"speed": 0.2}' style="background-image: url(https://steamcdn-a.akamaihd.net/steamcommunity/public/images/items/730/ef7cb44d312df5038cba0f69a0901da427900645.jpg); background-repeat: no-repeat; background-size: cover; background-position: center center;">
+        <div class="mask rgba-white-light">
+
+            <div class="container h-100 d-flex justify-content-center align-items-center">
+                <div class="row pt-5 mt-3">
+                    <div class="col-md-12 mb-3">
+                        <div class="intro-info-content text-center">
+                            <img src="img/logo.png">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <main class="mt-5 pt-4">
+        <div class="container">
+            <main role="main" class="pb-3">
+                <section class="section pb-3 wow fadeIn" data-wow-delay="0.3s">
+
+                    <!--Section heading-->
+                    <section id="best-features" class="text-center">
+                        <div class="row">
+
+                            <!--Grid column-->
+                            <div class="col-md-4 mb-5">
+                                <i class="fas fa-user fa-3x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Registered users @await csgo.usersManager.getUsersCount()</h4>
+
+                            </div>
+                            <div class="col-md-4 mb-5">
+                                <i class="fas  fa-shopping-cart fa-3x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Active sellers  @csgo.usersManager.users.FindAll(a => a.lastRequestTime != null && a.seller && (DateTime.Now - a.lastRequestTime).TotalMinutes < 5).Count</h4>
+
+                            </div>
+                            <div class="col-md-4 mb-5">
+                                <i class="fas fa-network-wired fa-3x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Online users @csgo.usersManager.users.FindAll(a=> a.lastRequestTime != null && (DateTime.Now - a.lastRequestTime).TotalMinutes < 5).Count</h4>
+
+                            </div>
+
+                        </div>
+                        <!-- Heading -->
+                        <h2 class="mb-5 font-weight-bold">Terms of service</h2>
+
+                        <!--Grid row-->
+                        <div class="row d-flex justify-content-center mb-4">
+
+                            <!--Grid column-->
+                            <div class="col-md-8">
+
+                                <!-- Description -->
+                                <p class="grey-text">
+                                    By continuing to browse this platform you have read and agree to the terms and conditions.
+                                </p>
+
+                            </div>
+                            <!--Grid column-->
+
+                        </div>
+                        <!--Grid row-->
+                        <!--Grid row-->
+                        <div class="row">
+
+                            <!--Grid column-->
+                            <div class="col-md-4 mb-5">
+                                <i class="fas fa-hand-holding-usd fa-4x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Selling</h4>
+                                <p class="grey-text">
+                                    1.1 The sale of accounts can be done only by users who have the right to sell on the site.
+                                </p>
+                                <p class="grey-text">
+                                    1.2 Account / email information from the account must be filled in correctly when placed on the site, otherwise
+                                    the account will not be accepted on the site.
+                                </p>
+                                <p class="grey-text">
+                                    1.3 Account statistics must be correct, the first time they are wrong we will correct them, but if there are more mistakes the account will be deleted.
+                                </p>
+                                <p class="grey-text">
+                                    1.4 The price of the account must correspond to the account, do not jeopardize the prices.
+                                </p>
+                                <p class="grey-text">
+                                    1.5 The commission we charge is 9%, if a user sets the account to 10€, the seller will receive 9.10€ .
+                                </p>
+                                <p class="grey-text">
+                                    1.6 Unjustified refund is not accepted in any case.
+                                </p>
+                                <p class="grey-text">1.7 Once the account has been accepted on the site, the seller completely loses access to the account.</p>
+                                <p class="grey-text">
+                                    1.8 After you have sold an account the money will be locked in the balance for 14 days.
+                                </p>
+                            </div>
+                            <!--Grid column-->
+                            <!--Grid column-->
+                            <div class="col-md-4 mb-1">
+                                <i class="fas fa-file-invoice-dollar fa-4x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Buying</h4>
+
+                                <p class="grey-text">2.1 Buy accounts only from users with positive ratings on the site, if you lose access to an account and the user is not trusted on the site the money will not be returned.</p>
+                                <p class="grey-text">2.2 We recommend that you leave a positive / negative rating to the user from whom you purchased the account so that other users can find out if the user is trustworthy.</p>
+                                <p class="grey-text">
+                                    2.3 If you buy from a normal seller, go at your own risk, if you buy from a trusted seller you have the guarantee that in case something happens
+                                    with the account the money will be returned to you.
+                                </p>
+                               
+                                <p class="grey-text">2.4 Unjustified refund is not accepted in any case.</p>
+                                <p class="grey-text">2.5 If you have any doubts about a seller you can and please make a dispute immediately to let us know.</p>
+                            </div>
+                            <!--Grid column-->
+                            <!--Grid column-->
+                            <div class="col-md-4 mb-1">
+                                <i class="fas fa-balance-scale fa-4x dark-grey-text"></i>
+                                <h4 class="my-4 font-weight-bold">Balance</h4>
+
+                                <p class="grey-text">3.1 You can deposit on this site via PayPal, PaySafeCard and Mobile Payment.</p>
+                                <p class="grey-text">3.2 Refund once you have added the money to the balance is prohibited.</p>
+                                <p class="grey-text">3.3 Withdrawal of money from the balance can be done only through PayPal. This process may take from 2 days to one week.</p>
+                                <p class="grey-text">3.4 In case of unjustified refund via PayPal, the user will be banned and the money will not be returned.</p>
+                                <p class="grey-text">3.5 When you deposit you will receive the net amount. That means you will pay the fees.</p>
+                            </div>
+                            <!--Grid column-->
+
+                        </div>
+                        <!--Grid row-->
+
+                    </section>
+
+                </section>
+
+            </main>
+        </div>
+    </main>
+    }
+    @{ /*   var accounts = csgo.accountsManager.loadAccounts(true).Result;
+
+
+                                for (int i = 0; i < csgo.accountsManager.categories.Length; i++)
+                                {
+                                    var categoryAccounts = accounts.FindAll(a => csgo.accountsManager.ranks[a.rank].Contains(csgo.accountsManager.categories[i]));
+
+
+                                    if (categoryAccounts.Count > 0)
+                                    {
+                                        var lowestPrice = categoryAccounts.Min(account => account.price);
+                                        var highestPrice = categoryAccounts.Max(account => account.price);
+                                        <div class="col-lg-3 col-md-6 mb-4">
+
+                                            <!--Card-->
+                                            <div class="card card-ecommerce">
+
+                                                <!--Card image-->
+                                                <div class="view overlay z-depth-1">
+                                                    <img src="@csgo.accountsManager.getImageByCategory(i)" class="card-img-top"
+                                                         alt="">
+                                                    <a>
+                                                        <div class="mask rgba-white-slight"></div>
+                                                    </a>
+                                                </div>
+                                                <!--Card image-->
+                                                <!--Card content-->
+                                                <div class="card-body text-center no-padding">
+                                                    <!--Category & Title-->
+                                                    <a href="" class="text-muted">
+                                                        <h5>Stock @categoryAccounts.Count</h5>
+                                                    </a>
+                                                    <h4 class="card-title">
+                                                        <strong>
+                                                            <a href="">@csgo.accountsManager.categories[i]</a>
+                                                        </strong>
+                                                    </h4>
+
+
+                                                    <!--Card footer-->
+                                                    <div class="card-footer">
+                                                        <span class="float-left">
+                                                            @lowestPrice$
+
+                                                        </span>
+                                                        -
+                                                        <span class="float-right">
+                                                            @highestPrice$
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+                                                <!--Card content-->
+
+                                            </div>
+                                            <!--Card-->
+
+                                        </div>
+                                    }
+                                }
+                            }*/
+    }
+
+
+<footer class="page-footer font-small teal pt-4 elegant-color-dark">
+
+    <!-- Footer Text -->
+    <div class="container-fluid text-center text-md-left">
+
+        <!-- Grid row -->
+        <div class="row">
+
+
+
+            <hr class="clearfix w-100 d-md-none pb-3">
+
+
+            <div class="col-md-6 mb-md-0 mb-3 elegant-color-dark text-light">
+
+
+                <p>
+                    steamaccounts.us is not affiliated with Valve Corporation or Steam.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</footer>

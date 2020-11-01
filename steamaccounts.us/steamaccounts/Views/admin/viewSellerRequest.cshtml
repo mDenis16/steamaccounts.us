@@ -1,0 +1,215 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData userData = null;
+    csgo.usersManager.sellerRequest sellerRequest = null;
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        userData = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if (userData != null)
+        {
+            ViewBag.account = userData;
+            ViewBag.logged = true;
+            adminController.tokenAccess.createToken(HttpContextAccessor.HttpContext.Request, adminController.tokenType.admin);
+            sellerRequest = await csgo.usersManager.readSellerRequest(ViewBag.userId);
+        }
+        else
+        {
+            HttpContextAccessor.HttpContext.Response.Redirect(Url.Action("index", "home"));
+        }
+    }
+    if (userData != null && userData.admin)
+    {
+        <div class="modal fade" id="modalConfirmAcceptSeller" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-notify modal-warning" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header">
+                        <p class="heading lead">Warning !</p>
+
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
+
+                    <!--Body-->
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                            <p>
+                               Are you sure you want to accept this seller?
+                            </p>
+                        </div>
+                    </div>
+
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <a type="button" class="btn btn-success" id="confirmAcceptSeller">Yes</a>
+                        <a type="button" class="btn btn-outline-success waves-effect" data-dismiss="modal">No, thanks</a>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+         <div class="modal fade" id="modalConfirmRevokeSeller" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-notify modal-warning" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header">
+                        <p class="heading lead">Warning !</p>
+
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
+
+                    <!--Body-->
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                            <p>
+                              Are you sure you want to revoke this seller?
+                            </p>
+                        </div>
+                    </div>
+
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <a type="button" class="btn btn-success" id="confirmRevokeSeller">Yes</a>
+                        <a type="button" class="btn btn-outline-success waves-effect" data-dismiss="modal">No, thanks</a>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+
+        <main class="mt-5 pt-lg-5">
+            <div class="container">
+                <main role="main" class="row ">
+
+                    <div class="col-md-12 card card-ecommerce mr-5">
+                        <div class="card-body text-center">
+                            <h4 class="card-title font-weight-bold mb-2">Request seller status</h4>
+                            <p class="card-text">Creation date: @sellerRequest.date.ToString()</p>
+                            @if (sellerRequest != null)
+                            {
+
+                                <div class="md-form" aria-disabled="true">
+                                    <input class="form-control" data-val="true"
+                                           data-val-required="The username field is required." id="username" name="username"
+                                           type="text" value="@sellerRequest.username" disabled>
+
+                                </div>
+                                <div class="md-form">
+                                    <input class="form-control" data-val="true"
+                                           data-val-required="The username field is required." id="password" name="password"
+                                           type="text" value="@sellerRequest.age" disabled>
+
+                                </div>
+                                <div class="md-form">
+                                    <input class="form-control" data-val="true"
+                                           data-val-required="The username field is required." id="nationality" name="password"
+                                           type="text" value="@sellerRequest.nationality" disabled>
+
+                                </div>
+
+                                <div class="md-form">
+                                    <textarea id="description" class="md-textarea form-control" rows="6">@sellerRequest.description</textarea>
+
+                                </div>
+
+                                <div class="md-form">
+                                    <textarea id="question" class="md-textarea form-control" rows="3">@sellerRequest.question</textarea>
+
+                                </div>
+                                <div class="md-form">
+                                    <input class="form-control" data-val="true"
+                                           data-val-required="The username field is required." id="phoneNumber" name="phoneNumber"
+                                           type="text" value="@sellerRequest.phoneNumber" disabled>
+
+                                </div>
+                                <div class="btn-group" role="group" aria-label="Basic example">
+                                    <button type="button" class="btn btn-success" onclick='  $("#modalConfirmAcceptSeller").modal("show")'>Accept</button>
+                                    <button type="button" class="btn btn-danger" onclick='  $("#modalConfirmRevokeSeller").modal("show")'>Revoke</button>
+
+                                </div>
+                            }
+
+
+
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </main>
+
+        <script>
+        var curSqlId = @Html.Raw(sellerRequest.userId);
+
+        $(document).ready(function () {
+
+            $("#acceptRequest").click(function () {
+                $("#modalConfirmAcceptSeller").modal('show');
+            });
+
+            $("#revokeRequest").click(function () {
+                $("#modalConfirmRevokeSeller").modal('show');
+            });
+            ///modalConfirmRevokeSeller
+            $("#confirmRevokeSeller").click(function () {
+
+
+
+
+                    $.getJSON('@Url.Action("manageSellerRequest", "admin" )', { id: curSqlId, status: false, phoneNumber: "@Html.Raw(sellerRequest.phoneNumber)" }, function (data) {
+                        if (data) {
+                            if (!data.success) {
+                                toastr.error(data.message);
+                                return;
+                            }
+                            toastr.success("You succesfully revoked this seller request.");
+                            location.replace("@Url.Action("sellerRequests", "admin")");
+                        }
+                    });
+
+
+
+            });
+            $("#confirmAcceptSeller").click(function () {
+
+
+
+                    $.getJSON('@Url.Action("manageSellerRequest", "admin" )', { id: curSqlId, status: true, phoneNumber: "@Html.Raw(sellerRequest.phoneNumber)" }, function (data) {
+                        if (data) {
+                            if (!data.success) {
+                                toastr.error(data.message);
+                                return;
+                            }
+                            toastr.success("You succesfully acepted this seller request.");
+                            location.replace("@Url.Action("sellerRequests", "admin")");
+                        }
+                    });
+
+
+
+            });
+
+        });
+        </script>
+    }
+    else
+    {
+        HttpContextAccessor.HttpContext.Response.Redirect(Url.Action("index", "home"));
+    }
+}

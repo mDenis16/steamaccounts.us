@@ -1,0 +1,310 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Login page";
+    ViewBag.logged = false;
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        csgo.usersManager.userData account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if (account != null)
+        {
+            TempData["toast"] = "{type:'success',message:'You are already logged in.'}";
+            ViewBag.alreadylogged = true;
+            HttpContextAccessor.HttpContext.Response.Redirect(Url.Action("index", "home"));
+        }
+    }
+}
+
+@model Tuple<csgo.postModels.Login, csgo.postModels.Register>
+<!--Modal: Login / Register Form-->
+<div class="modal fade" id="processingModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true" data-backdrop="false">
+    <div class="modal-dialog modal-dialog-centered modal-notify modal-success" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header elegant-color-dark">
+                <p class="heading lead">Processing your request.</p>
+
+
+            </div>
+
+            <!--Body-->
+            <div class="modal-body">
+                <div class="d-flex justify-content-center">
+                    <div class="preloader-wrapper big active">
+                        <div class="spinner-layer spinner-blue-only">
+                            <div class="circle-clipper left">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="gap-patch">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="circle-clipper right">
+                                <div class="circle"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="d-flex justify-content-center text-center align-middle pt-3">
+                    <span class="align-middle">It can takes 5-10 seconds to process the request.</span>
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+
+<div class="modal-dialog cascading-modal pt-5" role="document" id="loginContainer">
+    <!--Content-->
+    <div class="modal-content">
+
+        <!--Modal cascading tabs-->
+        <div class="modal-c-tabs">
+
+            <!-- Nav tabs -->
+            <ul class="nav md-pills nav-justified pills-dark mt-4 mx-4" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active " data-toggle="tab" href="#login" role="tab">
+                        <i class="fas fa-user mr-1"></i>
+                        Login
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#register" role="tab">
+                        <i class="fas fa-user-plus mr-1"></i>
+                        Register
+                    </a>
+                </li>
+            </ul>
+            <div class="modal-body mb-1">
+                <!-- Tab panels -->
+                <div class="tab-content pt-3">
+                    <!--Panel 1-->
+                    <div class="tab-pane fade in show active" id="login" role="tabpanel">
+
+                        <!--Body-->
+
+                        @using (Html.BeginForm("login", "login", FormMethod.Post, new { @class = "form", id = "loginForm", @role = "from" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+                            <div class="md-form form-sm">
+                                <i class="fas fa-user prefix"></i>
+                                @Html.TextBoxFor(tuple => tuple.Item1.username, new { @type = "text", @id = "usernameLogin", @class = "form-control form-control-sm" })
+                                <label for="form11">Your username</label>
+                            </div>
+
+                            <div class="md-form form-sm">
+                                <i class="fas fa-lock prefix"></i>
+                                @Html.PasswordFor(tuple => tuple.Item1.password, new { @type = "password", @name = "password", @id = "passwordLogin", @class = "form-control form-control-sm" })
+                                <label for="form12">Your password</label>
+                            </div>
+                            <div class="text-center mt-2">
+                                <button class="btn elegant-color-dark text-light" data-sitekey="6LdhgPsUAAAAAFF6zcAlnJtV-GJZr4MvPngDmq_Q" type="submit" id="loginBtn">Log in <i class="fas fa-sign-in ml-1"></i></button>
+                            </div>
+                            <div class="g-recaptcha"
+                                 data-sitekey="6LdhgPsUAAAAAFF6zcAlnJtV-GJZr4MvPngDmq_Q"
+                                 data-callback="onSubmit"
+                                 data-size="invisible">
+                            </div>
+                        }
+                        <div>
+                            <!-- Forgot password -->
+                            <a href="https://steamaccounts.us/lostPassword">Forgot password?</a>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade " id="register" role="tabpanel">
+
+                        <!--Body-->
+
+                        @using (Html.BeginForm("register", "register", FormMethod.Post, new { @class = "form", @role = "from", @id = "regForm" }))
+                        {
+
+                            @Html.AntiForgeryToken()
+                            <div class="md-form form-sm">
+
+                                <i class="fas fa-user prefix"></i>
+                                @Html.TextBoxFor(tuple => tuple.Item2.username, new { @type = "text", @id = "usernameRegister", @class = "form-control form-control-sm" })
+                                <label for="username" class="">Your username</label>
+
+                            </div>
+                            <div class="md-form form-sm">
+                                <i class="fas fa-envelope prefix"></i>
+                                @Html.TextBoxFor(tuple => tuple.Item2.email, new { @type = "email", @id = "emailRegister", @class = "form-control form-control-sm" })
+                                <label for="form13">Your email</label>
+                            </div>
+
+                            <div class="md-form form-sm">
+                                <i class="fas fa-lock prefix"></i>
+                                @Html.PasswordFor(tuple => tuple.Item2.password, new { @type = "password", @name = "password", @id = "passwordRegister", @class = "form-control form-control-sm" })
+                                <label for="form14">Your password</label>
+                            </div>
+
+                            <div class="md-form form-sm">
+                                <i class="fas fa-lock prefix"></i>
+                                <input type="password" id="passwordRegisterRe" class="form-control form-control-sm">
+                                <label for="form15">Repeat password</label>
+                            </div>
+
+                            <div class="text-center form-sm mt-2">
+                                <button class="btn elegant-color text-light" type="submit" id="registerBtn">Sign up <i class="fas fa-sign-in ml-1"></i></button>
+                            </div>
+
+
+
+
+
+                        }
+                    </div>
+                    <!--Footer-->
+
+                </div>
+                <!--/.Panel 1-->
+                <!--Panel 2-->
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(() => {
+        $("#modalLRForm").modal('show');
+
+    });
+    function isValidEmailAddress(emailAddress) {
+        var pattern = new RegExp(/^(("[\w-+\s]+")|([\w-+]+(?:\.[\w-+]+)*)|("[\w-+\s]+")([\w-+]+(?:\.[\w-+]+)*))(@@((?:[\w-+]+\.)*\w[\w-+]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$)|(@@\[?((25[0-5]\.|2[0-4][\d]\.|1[\d]{2}\.|[\d]{1,2}\.))((25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\.){2}(25[0-5]|2[0-4][\d]|1[\d]{2}|[\d]{1,2})\]?$)/i);
+        return pattern.test(emailAddress);
+    };
+
+    function checkPassword(password) {
+
+
+        if (password.length < 4)
+            return false;
+
+        var return_digit = false;
+
+        for (i = 0; i < 9; i++) {
+            if (password.includes(i)) {
+                return_digit = true;
+                break;
+            }
+        }
+
+        if (!return_digit)
+            return false;
+
+        var return_special = false;
+
+        var characters = "!@@#$%^&*"
+
+        for (i = 0; i < characters.length; i++) {
+            if (password.includes(characters[i])) {
+                return_special = true;
+                break;
+            }
+        }
+
+        if (!return_special)
+            return false;
+
+        return true;
+    }
+
+    $(document).ready(function () {
+        $("#registerBtn").click(function (event) {
+            event.preventDefault();
+            if (!$("#usernameRegister").val()) {
+                toastr.error('Username can`t be empty.'); event.preventDefault();
+                return;
+            }
+            if (!isValidEmailAddress($("#emailRegister").val())) {
+                toastr.error('You email is invalid.'); event.preventDefault();
+                return;
+            }
+            if (!$("#passwordRegister").val()) {
+                toastr.error('Password can`t be empty.'); event.preventDefault();
+                return;
+            }
+
+
+            if ($("#passwordRegister").val() != $("#passwordRegisterRe").val()) {
+
+                toastr.error('Password doesn`t match');
+                return;
+            }
+            if (!checkPassword($("#passwordRegister").val())) {
+                toastr.error('Your password needs to be longer than 5 characters and must include at least one digit and one character and one special character ( #!@@%$ ) .');
+                return;
+            }
+            setTimeout(() => {
+                $('body').animate({ opacity: 0 }, 400, function () {
+                    $('#regForm').submit();
+                });
+            }, 300);
+        });
+        $("#loginBtn").click(function (event) {
+            event.preventDefault();
+            if (!$("#usernameLogin").val()) {
+                toastr.error('Username can`t be empty.'); event.preventDefault();
+                return;
+            }
+
+            if (!$("#passwordLogin").val()) {
+                toastr.error('Password can`t be empty.'); event.preventDefault();
+                return;
+            }
+
+            $("#loginContainer").fadeOut(400, function () {
+                $("#processingModal").modal('show');
+                setTimeout(() => {
+
+                    $('body').animate({ opacity: 0 }, 400, function () {
+                        $('#loginForm').submit();
+                    });
+                }, 2000);
+            });
+
+        });
+
+    });
+</script>
+
+<script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit"
+        async defer>
+</script>
+
+    <script>
+        function onSubmit(token) {
+            alert('thanks ' + document.getElementById('field').value);
+        }
+
+        function validate(event) {
+            event.preventDefault();
+            if (!document.getElementById('field').value) {
+                alert("You must add text to the required field");
+            } else {
+                grecaptcha.execute();
+            }
+        }
+
+       
+
+        var onloadCallback = function() {
+            grecaptcha.render('submit', {
+                'sitekey': '6LdhgPsUAAAAAFF6zcAlnJtV-GJZr4MvPngDmq_Q',
+                'callback': onSubmit
+            });
+        };
+</script>

@@ -1,0 +1,111 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData userData = null;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        userData = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if ( userData != null )
+        {
+            ViewBag.account = userData;
+            ViewBag.logged = true;
+            adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.admin );
+        }
+        else
+        {
+          
+            HttpContextAccessor.HttpContext.Abort( );//.Response.StatusCode = 404
+
+
+        }
+    }
+
+    if (userData != null && userData.admin){
+    <main class="mt-5 pt-4">
+        <div class="container">
+            <main role="main" class="pb-3">
+                <section class="section pb-3 wow fadeIn" data-wow-delay="0.3s">
+
+                   
+
+
+                    <div class="row d-flex justify-content-center pt-5">
+
+                        <div class="col-md-4">
+                            <!--Card-->
+                            <div class="card  elegant-color-dark">
+                                <div class="card-header text-center">
+                                   User statistics
+                                </div>
+                                <!--Card content-->
+                                <div class="card-body">
+
+                                    <canvas id="userData" style="max-width: 100%;"></canvas>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </section>
+
+
+
+            </main>
+        </div>
+    </main>
+    <script>
+        function GetMonths() {
+            const d = new Date();
+            var monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            var months_to_return = [];
+
+            for (var i = 0; i < 3; i++) {
+                console.log(`debug data d.getMonth() - i ${parseInt(d.getMonth()) - i}`);
+                if (d.getMonth() - i < 0) {
+                    months_to_return.push({ name: monthNames[monthNames.length + d.getMonth() - i], id: monthNames.length + d.getMonth() - i });
+
+                }
+                else { months_to_return.push({ name: monthNames[d.getMonth() - i], id: d.getMonth() - i }); }
+            } return months_to_return.reverse();
+        }
+        $(document).ready(() => {
+            var ctxL = document.getElementById("userData").getContext('2d');
+            var myLineChart = new Chart(ctxL, {
+                type: 'line',
+                data: {
+                    labels: GetMonths().map(a => a.name),
+                    datasets: [{
+                        label: "Useri inregistrati ",
+                        data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject( csgo.usersManager.getAllUsers3Months( ).Result.GroupBy( c => c.registerDate.Month ).OrderByDescending(m => m.Key).Reverse().Select( g => new { Count = g.Count( ) } ).Select(a=> a.Count))),
+                        backgroundColor: [
+                            'rgba(105, 0, 132, .2)',
+                        ],
+                        borderColor: [
+                            'rgba(200, 99, 132, .7)',
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+                        
+        });
+    </script>
+    }else
+    {
+        HttpContextAccessor.HttpContext.Abort( );
+    }
+}

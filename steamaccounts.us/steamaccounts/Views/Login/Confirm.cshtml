@@ -1,0 +1,40 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData[ "Title" ] = "Validate account";
+    ViewBag.logged = false;
+
+    csgo.usersManager.userData account = null;
+
+
+}
+
+<div style="height: 100vh">
+    <div class="flex-center flex-lg-column">
+        <div class="col-lg-4 col-md-8 mx-auto text-center align-items-center">
+            @if ( ViewBag.token == null )
+            {
+                <h1>Token is invalid</h1>
+            }
+            else
+            {
+                if ( await csgo.core.emailManager.validateEmailToken( ViewBag.token ) )
+                {
+                    <p class="h1">Your account was succesfully confirmed.</p>
+                }
+                else
+                {
+                    <h1>Token is invalid</h1>
+                }
+
+            }
+
+
+        </div>
+    </div>
+</div>
+<script>
+    toastr.success("Redirecting to login in 3 sec");
+    setTimeout(() => {
+        document.location.href = '@Url.Action("index", "login")';
+    }, 3000);
+</script>

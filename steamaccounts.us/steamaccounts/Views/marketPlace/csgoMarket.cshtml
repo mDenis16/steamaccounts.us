@@ -1,0 +1,318 @@
+﻿
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData[ "Title" ] = "Home Page";
+    ViewBag.logged = false;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        csgo.usersManager.userData account = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if ( account != null )
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+          
+            
+        }
+    }
+}
+
+
+<div class="modal fade " id="modalBuy" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog  modal-info modal-dialog-centered modal-notify" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header elegant-color-dark">
+                <p class="heading lead">Buy account</p>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class="white-text">&times;</span>
+                </button>
+            </div>
+
+            <!--Body-->
+            <div class="modal-body" id="modalBody"></div>
+
+            <!--Footer-->
+            <div class="modal-footer justify-content-center">
+                <a type="button" class="btn btn-outline-success" id="confirmBuy">Confirm buy</a>
+                <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+
+<div class="modal fade" id="successBuy" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered  modal-success" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header">
+                <p class="heading lead">Info</p>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" class="white-text">&times;</span>
+                </button>
+            </div>
+
+            <!--Body-->
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-check fa-4x mb-3 animated rotateIn"></i>
+                    <p>
+                        You succesfully bought the account. You can view details of it on your profile.
+                    </p>
+                </div>
+            </div>
+
+            <!--Footer-->
+            <div class="modal-footer justify-content-center">
+                <a type="button" class="btn btn-success" onclick=" location.reload();">Ok</i></a>
+
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+<main class="mt-5 pt-lg-5">
+
+    <div class="container">
+        <main role="main" class="pb-3 pt-xl-5 ">
+            <section class="section pb-3 wow fadeIn animated" data-wow-delay="0.3s"
+                     style="visibility: visible; animation-name: fadeIn; animation-delay: 0.3s;">
+
+
+
+                <div class="row">
+                    <div class="col-8 align-content-center">
+                        <div class="input-group md-form form-sm form-2 pl-0">
+                            <input class="form-control my-0 py-1 red-border" type="text" id="inputSearch" placeholder="Search" aria-label="Search">
+                            <div class="input-group-append" id="clickSearch">
+                                <span class="input-group-text elegant-color-dark lighten-3" id="basic-text1">
+                                    <i class="fas fa-search text-grey"
+                                       aria-hidden="true"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                  
+                    <div class="col-4 align-content-center">
+                        <select class="mdb-select md-form" id="rank" searchable="Search your rank">
+                            <option>Unranked</option>
+                            <option>Silver 1</option>
+                            <option>Silver 2</option>
+                            <option>Silver 3</option>
+                            <option>Silver 4</option>
+                            <option>Silver Elite</option>
+                            <option>Silver Elite Master</option>
+                            <option>Gold Nova 1</option>
+                            <option>Gold Nova 2</option>
+                            <option>Gold Nova 3</option>
+                            <option>Gold Nova Master</option>
+                            <option>Master Guardian 1</option>
+                            <option>Master Guardian 2</option>
+                            <option>Master Guardian Elite</option>
+                            <option>Distinguished Master Guardian</option>
+                            <option>Legendary Eagle</option>
+                            <option>Legendary Eagle Master</option>
+                            <option>Supreme Master</option>
+                            <option>Global Elite</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row pt-5">
+
+                    <!--Grid column-->
+                    <div class="col-lg-12  mb-4">
+
+                        @{ int page = ViewBag.pag != null ? ViewBag.pag : 0; var accounts = csgo.accountsManager.loadAccounts(false).Result.FindAll(a=> a.status == csgo.status.selling && a.type == csgo.type.csgo).OrderByDescending(a=> a.rank).ToList(); if ( ViewBag.rank != null ) accounts = accounts.FindAll( a => csgo.accountsManager.ranks[ a.rank ] == ViewBag.rank );  if ( ViewBag.search != null ) accounts = csgo.accountsManager.searchAccounts( accounts, (string)ViewBag.search); var pages = accounts.Count() / 10; accounts = accounts.Skip( page * 10 ).Take( 10 ).ToList( );
+                            foreach ( var acc in accounts )
+                            {
+
+ <!--Card-->
+                            <div class="card card-ecommerce mb-2">
+
+
+                                <div class="card-body">
+
+                                    <div class="row">
+                                        <div class="col-sm-3  text-center align-self-center">
+                                            <img src="@csgo.accountsManager.getImageByCategory( acc.rank )"
+                                                 class="img-fluid" alt="">
+
+                                        </div>
+
+                                        <div class="col-sm-2 text-center align-self-center">
+                                            @csgo.accountsManager.ranks[ acc.rank ] <br />
+                                            @{if ( acc.prime )
+                                                    { <span class="badge badge-info">Prime</span>} }
+                                            <span class="badge badge-info">@acc.hours hours</span>
+                                            <span class="badge badge-info">@acc.wins wins</span>
+                                        </div>
+                                        <div class="col-sm-2 text-center align-self-center">
+                                    
+                                                <td class="text-center align-middle">
+                                                    <i class="far fa-star green-text"></i> @acc.positiveRates <i class="far fa-star red-text"></i> @acc.negativeRates
+                                                </td>
+                                            
+                                        </div>
+                                        <div class="col-sm-2 text-center align-self-center">
+                                            @acc.price <i class="fas fa-euro-sign"></i>
+                                        </div>
+                                        <div class="col-sm-3 text-center align-self-center btn-group d-flex">
+                                            <a type="button" class="btn btn-dark-green btn-rounded buyBtn" sqlid="@acc.id" price="@acc.price">Buy</a>
+                                            <a type="button" class="btn btn-mdb-color btn-rounded" href="@Url.Action("account", new{ id = acc.id })">More</a>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                                <!--Card content-->
+
+                            </div>
+ <!--Card-->
+                                                    }
+                                                    if ( accounts.Count == 0 )
+                                                    {<p class="h5 text-center">There are no accounts yet.</p>}
+                        }
+
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12  mb-4 d-flex justify-content-center">
+                        <nav aria-label="Page navigation example" class="text-center">
+                            <ul class="pagination pagination-circle pg-blue">
+                                <li class="page-item disabled"><a class="page-link" href="@Url.Action("csgoMarket", "marketPlace", new { pag = 0 })">First</a></li>
+                                <li class="page-item ">
+                                    @{var paga = @ViewBag.pag - 1;
+                                        if ( paga <= 0 )
+                                            paga = 0;
+                                        <a class="page-link" href="@Url.Action("Index", "csgoMarket", new { pag = paga })" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="sr-only">Previous</span>
+                                        </a>
+                                    }
+                                </li>
+
+                                @for ( int i = 0; i <= pages; i++ )
+                                {
+                                @if ( i == ViewBag.pag )
+                                    {
+                                <li class="page-item active">
+                                    <a class="page-link" href="@Url.Action("csgoMarket", "marketPlace", new { pag = i })">@i</a>
+                                </li>
+                                    }
+                                    else
+                                    {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("csgoMarket", "marketPlace", new { pag = i })">@i</a>
+                                </li>
+                                    }
+
+                                }
+                                @{
+                                    var paga2 = @ViewBag.pag + 1;
+                                    if ( paga2 >= pages )
+                                        paga = pages;
+
+                                    <li class="page-item">
+                                        <a class="page-link" aria-label="Next" href="@Url.Action("csgoMarket", "marketPlace", new { pag = paga })">
+                                            <span aria-hidden="true">&raquo;</span>
+                                            <span class="sr-only">Next</span>
+                                        </a>
+                                    </li>
+                                }
+                                <li class="page-item"><a class="page-link" href="@Url.Action("csgoMarket", "marketPlace", new { pag = pages })">Last</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+</main>
+
+<script>
+    $(document).ready(function () {
+        $('#dtMaterialDesignExample').DataTable();
+        $('.mdb-select').materialSelect();
+        $('#dtMaterialDesignExample_wrapper').find('label').each(function () {
+            $(this).parent().append($(this).children());
+        });
+        $('#dtMaterialDesignExample_wrapper .dataTables_filter').find('input').each(function () {
+            const $this = $(this);
+            $this.attr("placeholder", "Search");
+            $this.removeClass('form-control-sm');
+        });
+        $('#dtMaterialDesignExample_wrapper .dataTables_length').addClass('d-flex flex-row');
+        $('#dtMaterialDesignExample_wrapper .dataTables_filter').addClass('md-form');
+        $('#dtMaterialDesignExample_wrapper select').removeClass(
+            'custom-select custom-select-sm form-control form-control-sm');
+        $('#dtMaterialDesignExample_wrapper select').addClass('mdb-select');
+        $('#dtMaterialDesignExample_wrapper .mdb-select').materialSelect();
+        $('#dtMaterialDesignExample_wrapper .dataTables_filter').find('label').remove();
+
+        $(".buyBtn").click(function (e) {
+            var account = $(this);
+            sqlid = account.attr("sqlid");
+            $("#modalBody").html(`
+ <p class="h5 text-center">Are you sure you want to buy this account?</p><br><p class="note note-danger"><strong>Note primary: </strong>You will be charged for ${account.attr("price")} <i class="fas fa-euro-sign"></i>.</p>
+`);
+
+
+            $("#modalBuy").modal('show');
+        });
+        $("#confirmBuy").click(function () {
+            $.ajax({
+                url: '/marketPlace/buyAccount',
+                type: 'GET',
+                data: { id: sqlid },
+                dataType: 'json',
+                success: function (result) {
+                    $("modalBuy").modal('hide');
+                    console.log(`recieved result ${result}`);
+                    if (!result.success) {
+                        toastr.error(result.message);
+                    } else {
+                       
+                        $("#successBuy").modal('show');
+                        setTimeout(() => {
+                            toastr.success(result.message);
+                            
+                        }, 1000);
+
+                        setTimeout(() => {
+                            location.reload();
+                        }, 4000);
+                    }
+
+
+                },
+                error: function () {
+
+                    toastr.error("An error ocurred");
+                }
+            });
+        });
+        $("#clickSearch").click(function () {
+            if ($("#inputSearch").val().length > 3)
+                window.location = "https://steamaccounts.us/marketPlace?search=" + $("#inputSearch").val() + "?rank=" + $("#rank").val();
+            else
+                window.location = "https://steamaccounts.us/marketPlace?rank=" + $("#rank").val();
+        });
+
+
+    });
+    var sqlid = -1;
+
+</script>

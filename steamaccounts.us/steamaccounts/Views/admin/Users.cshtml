@@ -1,0 +1,326 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData account = null;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if ( account != null )
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+        }
+
+    }
+    if ( account != null && account.admin )
+    {
+        <div class="modal fade " id="modalActions" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-notify" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                    <!--Header-->
+                    <div class="modal-header elegant-color-dark">
+                        <p class="heading lead">Account manage</p>
+
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true" class="white-text">&times;</span>
+                        </button>
+                    </div>
+
+                    <!--Body-->
+                    <div class="modal-body">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+
+                                </tr>
+                            </thead>
+                            <tbody id="modalBody">
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    <!--Footer-->
+                    <div class="modal-footer justify-content-center">
+                        <a type="button" class="btn btn-outline-elegant" id="saveAccount">Save</a>
+                        <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+                    </div>
+                </div>
+                <!--/.Content-->
+            </div>
+        </div>
+
+        <main class="mt-5 pt-4">
+            <div class="container">
+                <main role="main" class="pt-lg-5">
+                    <section class="section pb-3 wow fadeIn" data-wow-delay="0.3s">
+
+                        <div class="card ">
+                            <h5 class="card-header info-color white-text text-center py-4 elegant-color">
+                                <strong>Users</strong>
+                            </h5>
+                            <div class="card-body table-responsive">
+                                <table id="dtBasicExample" class="table table-striped  table-sm" cellspacing="0" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-sm text-center">
+                                                #
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Username
+
+                                            </th>
+
+                                            <th class="th-sm text-center">
+                                                Sold
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Bought
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Register date
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Last login
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Phonenumber
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Balance
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Seller
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Rate
+
+                                            </th>
+                                            <th class="th-sm text-center">
+                                                Actions
+
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        @foreach ( var user in await csgo.usersManager.getAllUsers( ) )
+                                        {
+                                        <tr sqlid="@user.id">
+                                            <td class="text-center align-middle">@user.id</td>
+                                            <td class="text-center align-middle">@user.username</td>
+                                            <td class="text-center align-middle" id="soldAccounts-@user.id">@user.soldAccounts</td>
+                                            <td class="text-center align-middle" id="boughtAccounts-@user.id">@user.boughtAccounts</td>
+                                         
+                                            <td class="text-center align-middle">@user.registerDate.ToString()</td>
+                                            <td class="text-center align-middle">@user.lastLogin.ToString()</td>
+                                            <td class="text-center align-middle" id="phoneNumber-@user.id">@user.phoneNumber</td>
+                                            <td class="text-center align-middle" id="balance-@user.id">@user.balance</td>
+                                            <td class="text-center align-middle" id="seller-@user.id">@user.seller</td>
+                                            <td class="text-center align-middle">   <i class="far fa-star green-text"></i> @user.positiveRates <i class="far fa-star red-text"></i> @user.negativeRates</td>
+                                            <td class="text-center align-middle"><button type="button" class="btn btn-elegant accountAccess" sqlid="@user.id">Access</button></td>
+                                        </tr>
+                                        }
+
+
+
+
+
+
+                                    </tbody>
+                                    <tfoot>
+
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Editable table -->
+
+                    </section>
+
+
+
+                </main>
+            </div>
+        </main>
+
+        <script>
+        var curSqlId = -1;
+        $(document).ready(function () {
+            $('#dtBasicExample').DataTable();
+            $('.dataTables_length').addClass('bs-select');
+            $('body').on('click', '.accountAccess', function () {
+
+                var sqlid = $(this).parent().parent().attr("sqlid");
+                console.log(sqlid);
+                if (sqlid) {
+                    curSqlId = sqlid;
+
+                    $("#modalActions").modal('show');
+                    $.getJSON('@Url.Action( "getUserInfo", "admin" )', { id: curSqlId }, function (data) {
+                        if (data) {
+                            $("#modalBody").empty();
+                            $("#modalBody").append(`
+
+                            <tr>
+                                <th scope="row">Username</th>
+                                <td>${data.username}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Selling accounts</th>
+                                <td>${data.sellingAccounts}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Register date</th>
+                                <td>${data.registerDate}</td>
+
+                            </tr>
+ <tr>
+                                <th scope="row">Banned</th>
+                                <td class="md-form">
+                                                <div class="switch">
+                                                    <label>
+                                                        <input data-val="true" data-val-range="The field Is Active must be checked." data-val-range-max="True" data-val-range-min="False" data-val-required="The prime field is required." id="banned" name="banned" type="checkbox" value="${data.banned}">
+                                                        <span class="lever"></span>Yes
+                                                    </label>
+                                                </div>
+                                 </td>
+
+                            </tr>
+                             <tr>
+                                <th scope="row">Ban reason</th>
+
+                                                <td class="md-form"> <input type="text" id="banReason" class="form-control" value="${data.banReason}"> </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Online</th>
+                                <td>${data.connectionId != undefined ? "Yes" : "No"}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Login IP</th>
+                                <td>${data.loginIP}</td>
+
+                            </tr>
+                            <tr>
+
+                                              <th scope="row">Password recovery</th>
+
+                                             <td class="md-form"> <button type="button" class="btn btn-secondary createRecovery">Create link</button> </td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Email</th>
+
+                                                <td class="md-form"> <input type="email" id="email" class="form-control" value="${data.email}"> </td>
+                            </tr>
+
+                              <tr>
+                                <th scope="row">Rating</th>
+                                <td><i class="far fa-star green-text"></i> ${data.positiveRates} <i class="far fa-star red-text"></i> ${data.negativeRates}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Seller</th>
+                                <td class="md-form">
+                                                <div class="switch">
+                                                    <label>
+                                                        <input data-val="true" data-val-range="The field Is Active must be checked." data-val-range-max="True" data-val-range-min="False" data-val-required="The prime field is required." id="seller" name="seller" type="checkbox" value="${data.seller}">
+                                                        <span class="lever"></span>Yes
+                                                    </label>
+                                                </div>
+                                 </td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Seller reason ban</th>
+
+                                                <td class="md-form"> <input type="text" id="sellerTakeReason" class="form-control" value=""> </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sold accounts</th>
+                               <td class="md-form"> <input type="number" id="soldAccounts" class="form-control" value="${data.soldAccounts}"> </td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Bought accounts</th>
+                               <td class="md-form"> <input type="number" id="boughtAccounts" class="form-control" value="${data.boughtAccounts}"> </td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Balance</th>
+                               <td class="md-form"> <input type="number" id="balance" class="form-control" value="${data.balance}"> </td>
+
+                            </tr>
+                         `);
+                            $('.mdb-select').materialSelect();
+
+                            $("#seller").prop(":checked", data.seller);
+                            $("#banned").prop(":checked", data.banned);
+                            $("#modalActions").modal('show');
+                            $("#seller").attr("checked", data.seller)
+                            $("#banned").attr("checked", data.banned)
+                        }
+                    });
+
+                }
+
+             });
+            var token = undefined;
+            $('body').on('click', '.createRecovery', function () {
+                var element = $(this).parent();
+                $.getJSON('@Url.Action( "resetPassApi", "login" )', { userId: curSqlId }, function (data)
+                {
+                    token = data.token;
+                    element.html(`<input type="text" class="form-control" value='steamaccounts.us/recoveryPassword?token=${data.token}'>`);
+                 });
+
+            });
+            $("#saveAccount").click(function () {
+
+                var accountData = {
+                    seller: $("#seller").is(":checked") ? 1 : 0,
+                    email: $("#email").val(),
+                    boughtAccounts: $("#boughtAccounts").val(),
+                    soldAccounts: $("#soldAccounts").val(),
+                    balance: $("#balance").val(),
+                    banned: $("#banned").is(":checked") ? 1 : 0,
+                    banReason: $("#banReason").val(),
+                    sellerTakeReason: $("#sellerTakeReason").val()
+                };
+ 
+
+                $.getJSON('@Url.Action( "saveUserInfo", "admin" )', { id: curSqlId, data: JSON.stringify(accountData) }, function (data) {
+             //       location.reload();
+                    $(`#soldAccounts-${curSqlId}`).text(accountData.soldAccounts);
+                    $(`#boughtAccounts-${curSqlId}`).text(accountData.boughtAccounts);
+                    $(`#balance-${curSqlId}`).text(accountData.balance);
+                    $(`#seller-${curSqlId}`).text(accountData.seller);
+                });
+            });
+        });
+        </script>
+    }
+    else
+    {
+        HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "index", "home" ) );
+    }
+}

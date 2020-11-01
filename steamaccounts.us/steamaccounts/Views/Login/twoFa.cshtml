@@ -1,0 +1,107 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Forgot account";
+    ViewBag.logged = false;
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        csgo.usersManager.userData account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if (account != null)
+        {
+            TempData["toast"] = "{type:'success',message:'You are already logged in.'}";
+            ViewBag.alreadylogged = true;
+            HttpContextAccessor.HttpContext.Response.Redirect(Url.Action("index", "home"));
+        }
+    }
+}
+
+@model csgo.postModels.twoFactor
+
+<div style="height: 100vh">
+    <div class="flex-center flex-lg-column">
+        <div class="col-lg-4 col-md-8 mx-auto">
+
+
+            @{
+                if (ViewBag.temp2FAToken == null)
+                {
+                    <div class="card rounded shadow shadow-sm">
+                        <div class="card-header elegant-color-dark">
+                            <h3 class="mb-0 text-light">Enter the code from Google Authentificator</h3>
+                        </div>
+                        <div class="card-body">
+
+                            @using (Html.BeginForm("twofaAuth", "login", FormMethod.Post, new { @class = "form", role = "from" }))
+                            {
+
+                                @Html.AntiForgeryToken()
+
+
+                                <div class="md-form">
+
+                                    <i class="fas fa-user prefix"></i>
+                                    @Html.TextBoxFor(model => model.code, new { @type = "text", @id = "code", @class = "form-control" })
+                                    <label for="username" class="">Code</label>
+
+                                </div>
+
+                               
+                                <button class="btn elegant-color-dark my-1 btn-block waves-effect waves-light text-light" type="submit" id="changeEmail">Check code</button>
+
+                            }
+                        </div>
+                        <!--/card-block-->
+                    </div>
+                }
+                else
+                {
+
+
+                    <div class="card rounded shadow shadow-sm">
+                        <div class="card-header elegant-color-dark">
+                            <h3 class="mb-0 text-light">Enter the code from Google Authentificator</h3>
+                        </div>
+                        <div class="card-body text-center">
+
+                            @{var user = csgo.usersManager.getUserDatabyId((int)ViewBag.userId).Result;}
+                           
+                                <p><img src="@csgo.Controllers.loginController.tfa.GetQrCodeImageAsDataUri(user.username, (string)ViewBag.temp2FAToken)"></p>
+                            
+                                <a>Please enter the following secret in your app: @ViewBag.temp2FAToken</a>
+                            
+                            @{
+
+
+                                Console.WriteLine($"TEMP2FAtOKEN GENERATED   (string)ViewBag.temp2FAToken)");
+                            }
+                            @using (Html.BeginForm("twofaAuth", "login", FormMethod.Post, new { @class = "form", role = "from" }))
+                            {
+
+                                @Html.AntiForgeryToken()
+                                
+                                <div class="md-form">
+
+                              
+                                    @Html.TextBoxFor(model => model.code, new { @type = "text", @id = "code", @class = "form-control" })
+                                   
+
+                                </div>
+                               
+                                    <button class="btn elegant-color-dark my-1 btn-block waves-effect waves-light text-light" type="submit" id="changeEmail">I entered the code in my app</button>
+                                
+
+                            }
+
+                        </div>
+                        <!--/card-block-->
+                    </div>
+                }
+            }
+            <!-- /form card login -->
+           
+        </div>
+    </div>
+</div>
+<script>
+   
+
+</script>

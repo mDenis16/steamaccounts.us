@@ -1,0 +1,368 @@
+﻿@{
+    ViewData[ "Title" ] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using csgo.Controllers
+ 
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData userData = null;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        userData = csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request).Result;
+        if ( userData != null )
+        {
+            ViewBag.account = userData;
+            ViewBag.logged = true;
+            adminController.tokenAccess.createToken( HttpContextAccessor.HttpContext.Request, adminController.tokenType.admin );
+        }
+        else
+        {
+            HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+        }
+    }
+    if ( userData != null && userData.admin )
+    {
+    <div class="modal fade " id="modalActions" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-notify" role="document">
+            <!--Content-->
+            <div class="modal-content">
+                <!--Header-->
+                <div class="modal-header elegant-color-dark">
+                    <p class="heading lead">Account manage</p>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true" class="white-text">&times;</span>
+                    </button>
+                </div>
+
+                <!--Body-->
+                <div class="modal-body">
+                    <table class="table table-borderless">
+                        <thead>
+                            <tr>
+                                <th scope="col">Data</th>
+                                <th scope="col">Value</th>
+
+                            </tr>
+                        </thead>
+                        <tbody id="modalBody">
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <!--Footer-->
+                <div class="modal-footer justify-content-center">
+                    <a type="button" class="btn btn-outline-elegant" id="saveAccount" >Save</a>
+                    <a type="button" class="btn btn-outline-primary waves-effect" data-dismiss="modal">Cancel</a>
+                </div>
+            </div>
+            <!--/.Content-->
+        </div>
+    </div>
+
+    <main class="mt-5 pt-4">
+        <div class="container">
+            <main role="main" class="pt-lg-5">
+                <section class="section pt-3" data-wow-delay="0.3s">
+
+                    <div class="card ">
+                        <h5 class="card-header info-color white-text text-center py-4 elegant-color">
+                            <strong>Users</strong>
+                        </h5>
+                        <div class="card-body table-responsive">
+                            <table id="dtBasicExample" class="table table-striped  table-sm" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th class="th-sm text-center">
+                                            #
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Email
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Rank
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Price
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Prime
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Status
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Rate
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Date
+
+                                        </th>
+                                        <th class="th-sm text-center">
+                                            Actions
+
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+
+                                    @foreach ( var account in csgo.accountsManager.loadAccounts( false, true ).Result )
+                                    {
+                                    <tr sqlid="@account.id">
+                                        <td class="text-center align-middle">@account.id</td>
+                                        <td class="text-center align-middle">@account.username</td>
+                                        <td class="text-center align-middle">@csgo.accountsManager.ranks[ account.rank ]</td>
+
+                                        <td class="text-center align-middle">@account.price <i class="fas fa-euro-sign"></i></td>
+                                        <td class="text-center align-middle">
+                                            @if ( account.prime )
+                                            {
+                                                <span class="badge badge-info">Prime</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge badge-light">Non prime</span>
+                                            }
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            @{
+                                                switch ( account.status )
+                                                {
+                                                    case csgo.status.pending:
+                                                        <span class="badge badge-warning">Pending</span>
+                                                        break;
+                                                    case csgo.status.sold:
+                                                        <span class="badge badge-success">Sold</span>
+                                                        break;
+                                                    case csgo.status.selling:
+                                                        <span class="badge badge-info">Selling</span>
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+
+
+                                            }
+                                        </td>
+                                            @{var seller = csgo.usersManager.getDataByUsername(account.seller).Result;
+                                            <td class="text-center align-middle">   <i class="far fa-star green-text"></i> @seller.positiveRates <i class="far fa-star red-text"></i> @seller.negativeRates</td>
+                                            <td class="text-center align-middle">@account.date</td>
+                                            <td class="text-center align-middle"><button type="button" class="btn btn-elegant accountAccess">Access</button></td>
+                                            }
+                                        </tr>
+                                                }
+
+
+
+
+
+
+                                </tbody>
+                                <tfoot>
+
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Editable table -->
+
+                </section>
+
+
+
+            </main>
+        </div>
+    </main>
+
+    <script>
+        var curSqlId = -1;
+        
+        $(document).ready(function () {
+           
+               
+            $('#dtBasicExample').DataTable();
+            $('.dataTables_length').addClass('bs-select');
+            $('body').on('click', '#setPassword', function () {
+                $("#setPasswordModal").modal('show');
+            });
+            $(".accountAccess").click(function () {
+
+                var sqlid = $(this).parent().parent().attr("sqlid");
+                console.log(sqlid);
+                if (sqlid) {
+                    curSqlId = sqlid;
+
+                    $("#modalActions").modal('show');
+                    $.getJSON('@Url.Action( "getAccountInfo", "admin" )', { id: curSqlId }, function (data) {
+                        if (data) {
+                            $("#modalBody").empty();
+                            $("#modalBody").append(`
+
+                            <tr>
+                                <th scope="row">Username</th>
+                                <td>${data.username}</td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Passowrd</th>
+                               <td class="md-form"> <input type="text" id="password" class="form-control" value="${data.password}"> </td>
+
+
+
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Seller</th>
+                                <td>${data.seller}</td>
+                            </tr>
+                              <tr>
+                                <th scope="row">Price</th>
+                                <td>${data.price}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Prime</th>
+                                <td class="md-form">
+                                                <div class="switch">
+                                                    <label>
+                                                        <input data-val="true" data-val-range="The field Is Active must be checked." data-val-range-max="True" data-val-range-min="False" data-val-required="The prime field is required." id="prime" name="prime" type="checkbox" value="${data.prime}">
+                                                        <span class="lever"></span>Prime
+                                                    </label>
+                                                </div>
+                                 </td>
+
+                            </tr>
+                            <tr>
+                                <th scope="row">Hours</th>
+                               <td class="md-form"> <input type="text" id="hours" class="form-control" value="${data.hours}"> </td>
+                            </tr>
+                             <tr>
+                                <th scope="row">Rank</th>
+                                <td class="md-form">
+                             <div>
+                                     <select class="mdb-select" id="rank" value="${data.rank}">
+                                            <option value="0">Unranked</option>
+                                            <option value="1">Silver 1</option>
+                                            <option value="2">Silver 2</option>
+                                            <option value="3">Silver 3</option>
+                                            <option value="4">Silver 4</option>
+                                            <option value="5">Silver Elite</option>
+                                            <option value="6">Silver Elite Master</option>
+                                            <option value="7">Gold Nova 1</option>
+                                            <option value="8">Gold Nova 2</option>
+                                            <option value="9">Gold Nova 3</option>
+                                            <option value="10">Gold Nova Master</option>
+                                            <option value="11">Master Guardian 1</option>
+                                            <option value="12">Master Guardian 2</option>
+                                            <option value="13">Master Guardian Elite</option>
+                                            <option value="14">Distinguished Master Guardian</option>
+                                            <option value="15">Legendary Eagle</option>
+                                            <option value="16">Legendary Eagle Master</option>
+                                            <option value="17">Supreme Master</option>
+                                            <option value="18">Global Elite</option>
+                                    </select>
+</div>
+                                 </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Wins</th>
+                               <td class="md-form"> <input type="text" id="wins" class="form-control" value="${data.wins}"> </td>
+
+                            </tr>
+                             <tr>
+                                <th scope="row">Added date</th>
+                                <td>${data.date}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Email</th>
+                               <td class="md-form"> <input type="email" id="email" class="form-control" value="${data.email}"> </td>
+
+                            </tr>
+                           <tr>
+                                <th scope="row">Email Passowrd</th>
+                                <td class="md-form"> <input type="email" id="emailPassword" class="form-control" value="${data.emailPassword}"> </td>
+                            </tr>
+                          <tr>
+                                <th scope="row">Description</th>
+                          <td>
+                                <div>
+                                    
+                                <textarea id="description" class="md-textarea form-control" rows="6">${data.description}</textarea>
+                                <label for="description" class="">Edit description...</label>
+                            </div>
+                             </div>
+                         </td>
+                         </tr>
+                           <tr>
+                                <th scope="row">Status</th>
+                          <td>
+                                 <div>
+                                     <select class="mdb-select" id="status" value="${data.status}">
+                                            <option value="0">Pending</option>
+                                            <option value="1">Sold</option>
+                                            <option value="2">Selling</option>
+                                          
+                                    </select>
+                             </div>
+                          </td>
+     <tr>
+                                <th scope="row">Image link</th>
+                               <td class="md-form"> <input type="text" id="imageLink" class="form-control" value="${data.image}"> </td>
+
+                            </tr>
+                         `);
+                            $('.mdb-select').materialSelect();
+                            $('#rank').val(data.rank);
+                            $("#prime").prop(":checked", data.prime);
+                            $("#status").val(data.status);
+                            $("#modalActions").modal('show');
+
+                        }
+                    });
+
+                }
+
+            });
+            $("#saveAccount").click(function () {
+
+                var accountData = {
+                    password: $("#password").val(),
+                    rank: $("#rank").val(),
+                    wins: $("#wins").val(),
+                    prime: $("#prime").is(":checked") ? 1 : 0,
+                    hours: $("#hours").val(),
+                    email: $("#email").val(),
+                    emailPassword: $("#emailPassword").val(),
+                    description: $("#description").val(),
+                    status: $("#status").val(),
+                    imageLink: $("#imageLink").val()
+                };
+                console.log(accountData);
+
+                $.getJSON('@Url.Action( "saveAccountInfo", "admin" )', { id: curSqlId, data: JSON.stringify(accountData) }, function (data) {
+                    location.reload();
+                });
+            });
+            $("#modalActions").on('hidden.bs.modal', function () {
+                location.reload();
+            });
+
+        });
+    </script>
+                                                }
+                                                else
+                                                {
+                                                    HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "notFound", "home" ) );
+                                                }
+                                                }

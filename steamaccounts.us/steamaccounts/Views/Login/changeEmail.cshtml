@@ -1,0 +1,61 @@
+﻿@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData[ "Title" ] = "Forgot account";
+    ViewBag.logged = false;
+    if ( HttpContextAccessor.HttpContext.Request.Cookies[ "sessionid" ] != null )
+    {
+        csgo.usersManager.userData account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if ( account != null )
+        {
+            TempData[ "toast" ] = "{type:'success',message:'You are already logged in.'}";
+            ViewBag.alreadylogged = true;
+            HttpContextAccessor.HttpContext.Response.Redirect( Url.Action( "index", "home" ) );
+        }
+    }
+}
+
+@model csgo.postModels.forgotPassword
+
+<div style="height: 100vh">
+    <div class="flex-center flex-lg-column">
+        <div class="col-lg-4 col-md-8 mx-auto">
+
+         
+
+            <!-- form card login -->
+            <div class="card rounded shadow shadow-sm">
+                <div class="card-header elegant-color-dark">
+                    <h3 class="mb-0 text-light">Change your email</h3>
+                </div>
+                <div class="card-body">
+                 
+                    @using ( Html.BeginForm("changeEmailPost", "login", FormMethod.Post, new { @class = "form", role = "from" } ) )
+                    {
+
+                        @Html.AntiForgeryToken( )
+
+
+                        <div class="md-form">
+
+                            <i class="fas fa-user prefix"></i>
+                            @Html.TextBoxFor( model => model.email, new { @type = "email", @id = "email", @class = "form-control" } )
+                            <label for="username" class="">Email</label>
+
+                        </div>
+
+
+                        <button class="btn elegant-color-dark my-1 btn-block waves-effect waves-light text-light" type="submit" id="changeEmail">Change</button>
+
+                    }
+                </div>
+                <!--/card-block-->
+            </div>
+            <!-- /form card login -->
+                        
+        </div>
+    </div>
+</div>
+<script>
+   
+
+</script>

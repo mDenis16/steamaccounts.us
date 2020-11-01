@@ -1,0 +1,132 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@using TwoFactorAuthNet
+@using csgo.Controllers
+
+@{
+    ViewBag.logged = false;
+    csgo.usersManager.userData account = null;
+   
+    List<csgo.core.logsManager.transactions.transaction> transactionLogs = new List<csgo.core.logsManager.transactions.transaction>();
+    if (HttpContextAccessor.HttpContext.Request.Cookies["sessionid"] != null)
+    {
+        account = await csgo.usersManager.getUserData(HttpContextAccessor.HttpContext.Request);
+        if (account != null)
+        {
+            ViewBag.account = account;
+            ViewBag.logged = true;
+            
+        }
+
+    }
+
+}
+
+@{
+    
+            <script src="https://unpkg.com/react@@16/umd/react.production.min.js"></script>
+            <script src="https://unpkg.com/react-dom@@16/umd/react-dom.production.min.js"></script>
+            <script src="https://unpkg.com/babel-standalone@@6.15.0/babel.min.js"></script>
+            <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+             <main class="mt-5 pt-lg-5">
+        <div class="container">
+            <main role="main" class="pb-3 pt-xl-5 ">
+                <section class="section pb-3 wow fadeIn animated" data-wow-delay="0.3s"
+                    style="visibility: visible; animation-name: fadeIn; animation-delay: 0.3s;">
+
+
+                    <div id="app">
+    <script type="text/babel">
+
+        class Product extends React.Component {
+            constructor(props) {
+                super(props);
+                this.viewDetails = this.viewDetails.bind(this);
+            }
+            viewDetails() {
+
+                $("#offlineDetailsBody").html(`<p>${this.props.product.description}</p>`);
+                $("#detailsOffline").modal('show');
+            }
+            render() {
+                return (
+                    <div className="card m-3" style={{ width: "260px", height: "620px" }}>
+                        <div className="view zoom overlay">
+                            <img className="img-fluid w-100" src={this.props.product.image} alt="Sample" />
+
+                           
+                        </div>
+                        <div className="card-body text-center">
+                            <h5>{this.props.product.title}</h5>
+                            <p className="small text-muted text-uppercase mb-2">OFFLINE ACCOUNT</p>
+                            <p className="small text-muted text-uppercase mb-2">STOCK {this.props.product.stock}/{this.props.product.maxStock}</p>
+                            <hr />
+                            <h6 className="mb-3">
+                                <span className="text-success mr-1">{this.props.product.price} Euro</span>
+
+                            </h6>
+                            <button type="button" className="btn btn-primary btn-sm mr-1 mb-2">
+                                <i className="fas fa-shopping-cart pr-2" />Buy account
+    </button>
+                            <button type="button" className="btn btn-light btn-sm mr-1 mb-2" onClick={this.viewDetails}>
+                                <i className="fas fa-info-circle pr-2" />Details
+    </button>
+                          
+                        </div>
+                    </div>
+
+                );
+            }
+        }
+        class OfflineAccounts extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { products: [] };
+            }
+            async componentDidMount() {
+                var products =localStorage.getItem("offlineProducts");
+                var lastUpdate = localStorage.getItem("offlineProductsUpdate");
+                if (lastUpdate && typeof(lastUpdate) == Date && ((new Date() - lastUpdate)/ 1000) > 60){
+                   
+                    products = undefined;
+                    alert('updated');
+                }
+               if (!products || typeof(products) !== Array){
+                const res = axios('/api/fetchOfflineProducts');
+
+                const { data } = await res;
+                if (data.success) {
+                    localStorage.setItem("offlineProducts", data.products);
+                     localStorage.setItem("offlineProductsUpdate", new Date());
+                    this.setState({ products: data.products });
+                }
+            }else{
+                  this.setState({ products: localStorage.getItem("offlineProducts") });
+            }
+
+
+            }
+            render() {
+                return (<div className="d-flex  justify-content-center flex-wrap">
+                    {this.state.products.map(product => {
+                        return (
+                            <Product product={product} />
+                        )
+                    })}</div>)
+            }
+        }
+
+        ReactDOM.render(<OfflineAccounts />, document.getElementById('app'))
+    </script>
+                    </div>
+
+
+                </section>
+            </main>
+        </div>
+    </main>         
+    
+    
+}
